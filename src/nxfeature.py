@@ -1,10 +1,12 @@
 #! /usr/bin/env python
 
 import h5py, numpy
-import importlib, sys
+import importlib, sys, os
 
 # print "%016X" % int("C0FFEEBEEFC0FFEE", 16)
 # feature = "C0FFEEBEEFC0FFEE"
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/recipes")
 
 class InsaneEntryWithFeatures:
 	def __init__(self, nxsfile, entrypath, featurearray):
@@ -31,7 +33,7 @@ class InsaneFeatureDiscoverer:
 			try:
 				features = self.file[path]
 				if features.dtype == numpy.dtype("uint64"):
-					ent.append(InsaneEntryWithFeatures(self.file, path, features))
+					ent.append(InsaneEntryWithFeatures(self.file, entry, features))
 			except:
 				print "no features in "+path
 				pass
