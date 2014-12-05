@@ -13,6 +13,7 @@ class recipe:
 	def __init__(self, filedesc, entrypath):
 		self.file = filedesc
 		self.entry = entrypath
+		self.title = "CIF-style sample geometry"
 
 	def findNXsample(self):
 		for node in self.file[self.entry].keys():
@@ -40,5 +41,5 @@ class recipe:
 			raise Exception("this feature does not validate correctly: "+e)
 			
 			# better have custom exceptions
-		return dependency_chain
+		return { "dependency_chain" : dependency_chain } 
 	
