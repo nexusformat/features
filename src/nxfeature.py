@@ -22,6 +22,11 @@ class InsaneEntryWithFeatures:
 		r = featuremodule.recipe(self.nxsfile,self.entrypath)
 		return r.process()
 
+	def feature_title(self, featureid):
+		featuremodule = importlib.import_module("%016X.recipe" % featureid)
+		r = featuremodule.recipe(self.nxsfile,self.entrypath)
+		return r.title
+
 class InsaneFeatureDiscoverer:
 	def __init__(self, nxsfile):
 		self.file = h5py.File(nxsfile, 'r')
@@ -44,5 +49,5 @@ if __name__ == '__main__':
 	for entry in disco.entries():
 		print "Entry %s has the following features: " % entry.entrypath
 		for feat in entry.features():
-			print entry.feature_response(feat)
+			print entry.feature_title(feat), "(%d)" % feat, entry.feature_response(feat)
 
