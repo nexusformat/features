@@ -1,9 +1,12 @@
-def getNXtomo(name, obj):
+def _visit_NXtomo(name, obj):
 	if "NX_class" in obj.attrs.keys():
 		if obj.attrs["NX_class"] in ["NXentry", "NXsubentry"]:
 			if "definition" in obj.keys():
 				if obj["definition"][0] == "NXtomo":
 					return obj
+
+def get_NXtomo(nx_file, entry):
+	return nx_file[entry].visititems(_visit_NXtomo)
 
 class recipe:
 	"""
@@ -21,7 +24,7 @@ class recipe:
 		self.title = "NXtomo discover"
 
 	def process(self):
-		nxTomo = self.file[self.entry].visititems(getNXtomo)
+		nxTomo = get_NXtomo(self.file, self.entry)
 		if nxTomo is not None:
 			return {"NXtomo" : nxTomo}
 		raise Exception("This feature does not validate correctly")

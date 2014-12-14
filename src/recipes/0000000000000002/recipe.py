@@ -1,8 +1,11 @@
-def getNXDetectorWithImageKey(name, obj):
+def _visit_NXdetector_with_image_key(name, obj):
 	if "NX_class" in obj.attrs.keys():
 		if obj.attrs["NX_class"] in ["NXdetector"]:
 			if "image_key" in obj.keys():
 				return obj
+
+def get_NXdetector_with_image_key(nx_file, entry):
+	return nx_file[entry].visititems(_visit_NXdetector_with_image_key)
 
 class recipe:
 	"""
@@ -20,7 +23,7 @@ class recipe:
 		self.title = "NXdetector with image key"
 
 	def process(self):
-		nxDet = self.file[self.entry].visititems(getNXDetectorWithImageKey)
+		nxDet = get_NXdetector_with_image_key(self.file, self.entry)
 		if nxDet is not None:
 			return {"NXdetector with image_key" : nxDet}
 		raise Exception("This feature does not validate correctly")
