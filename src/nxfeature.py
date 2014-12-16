@@ -77,23 +77,24 @@ if __name__ == '__main__':
 		fail_list = []
 		error_list = []
 		
-		print "Entry %s has the following features: " % entry.entrypath
+		print("Entry \"%s\" appears to contain the following features (they validate correctly): " % entry.entrypath)
 		for feat in entry.features():
 			try:
-				responce = entry.feature_response(feat)
-				print("  %s (%d) %s" % (entry.feature_title(feat), feat, responce))
+				response = entry.feature_response(feat)
+				print("\t%s (%d) %s" % (entry.feature_title(feat), feat, response))
 			except:
 				fail_list.append(feat)
 	
 		if len(fail_list) > 0:
-			print("\nEntry %s does not support the following features:" % entry.entrypath)
+			print("\nThe following features failed to validate:")
 			for feat in fail_list:
 				try:
-					print("  %s (%d)" % (entry.feature_title(feat), feat))
+					print("\t%s (%d)" % (entry.feature_title(feat), feat))
 				except:
 					error_list.append(feat)
 		
 		if len(error_list) > 0:
-			print("\nThe following features are corrupt (Or you might be running windows):")
+			print("\nThe following features had unexpected errors (Are you running windows?):")
 			for feat in error_list:
 				print("  (%d)" % (feat))
+		print("\n")
