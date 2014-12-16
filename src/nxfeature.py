@@ -6,7 +6,8 @@ import importlib, sys, os
 # print "%016X" % int("C0FFEEBEEFC0FFEE", 16)
 # feature = "C0FFEEBEEFC0FFEE"
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/recipes")
+RECIPIE_DIR = os.path.dirname(os.path.realpath(__file__))+"/recipes"
+sys.path.append(RECIPIE_DIR)
 
 class InsaneEntryWithFeatures:
 	def __init__(self, nxsfile, entrypath, featurearray):
@@ -43,6 +44,21 @@ class InsaneFeatureDiscoverer:
 				print "no features in "+path
 				pass
 		return ent
+
+class AllFeatureDiscoverer:
+	def __init__(self, nxsfile):
+		self.file = h5py.File(nxsfile, 'r')
+
+	def entries(self):
+		ent = []
+		for entry in self.file.keys():
+			try:
+				features = [int(feat, 16) for feat in os.listdir(RECIPIE_DIR)]
+				ent.append(InsaneEntryWithFeatures(self.file, entry, features))
+			except:
+				print "no recipies in "+RECIPIE_DIR
+				pass
+		return ent
 		
 if __name__ == '__main__':
 	import optparse
@@ -52,9 +68,32 @@ if __name__ == '__main__':
 	
 	(options, args) = parser.parse_args()
 	
-	disco = InsaneFeatureDiscoverer(args[0])
+	if options.test:
+		disco = AllFeatureDiscoverer(args[0])
+	else:
+		disco = InsaneFeatureDiscoverer(args[0])
+	
 	for entry in disco.entries():
+		fail_list = []
+		error_list = []
+		
 		print "Entry %s has the following features: " % entry.entrypath
 		for feat in entry.features():
-			print entry.feature_title(feat), "(%d)" % feat, entry.feature_response(feat)
-
+			try:
+				responce = entry.feature_response(feat)
+				print("  %s (%d) %s" % (entry.feature_title(feat), feat, responce))
+			except:
+				fail_list.append(feat)
+	
+		if len(fail_list) > 0:
+			print("\nEntry %s does not support the following features:" % entry.entrypath)
+			for feat in fail_list:
+				try:
+					print("  %s (%d)" % (entry.feature_title(feat), feat))
+				except:
+					error_list.append(feat)
+		
+		if len(error_list) > 0:
+			print("\nThe following features are corrupt:")
+			for feat in error_list:
+				print("  (%d)" % (feat))
