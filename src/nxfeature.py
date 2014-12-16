@@ -94,6 +94,6 @@ if __name__ == '__main__':
 					error_list.append(feat)
 		
 		if len(error_list) > 0:
-			print("\nThe following features are corrupt:")
+			print("\nThe following features are corrupt (Or you might be running windows):")
 			for feat in error_list:
 				print("  (%d)" % (feat))
