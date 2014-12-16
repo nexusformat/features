@@ -45,7 +45,14 @@ class InsaneFeatureDiscoverer:
 		return ent
 		
 if __name__ == '__main__':
-	disco = InsaneFeatureDiscoverer(sys.argv[1])
+	import optparse
+	usage = "%prog [options] nxs_file"
+	parser = optparse.OptionParser(usage=usage)
+	parser.add_option("-t", "--test", dest="test", help="Test file against all recipies", action="store_true", default=False)
+	
+	(options, args) = parser.parse_args()
+	
+	disco = InsaneFeatureDiscoverer(args[0])
 	for entry in disco.entries():
 		print "Entry %s has the following features: " % entry.entrypath
 		for feat in entry.features():
