@@ -1,12 +1,18 @@
-def _visit_NXtomo(name, obj):
-	if "NX_class" in obj.attrs.keys():
-		if obj.attrs["NX_class"] in ["NXentry", "NXsubentry"]:
-			if "definition" in obj.keys():
-				if obj["definition"][0] == "NXtomo":
-					return obj
+class _NXTomoFinder(object):
+	def __init__(self):
+		self.hits = []
 
-def get_NXtomo(nx_file, entry):
-	return nx_file[entry].visititems(_visit_NXtomo)
+	def _visit_NXtomo(self, name, obj):
+		if "NX_class" in obj.attrs.keys():
+			if obj.attrs["NX_class"] in ["NXentry", "NXsubentry"]:
+				if "definition" in obj.keys():
+					if obj["definition"][0] == "NXtomo":
+						self.hits.append(obj)
+	
+	def get_NXtomo(self, nx_file, entry):
+		self.hits = []
+		nx_file[entry].visititems(self._visit_NXtomo)
+		return self.hits
 
 class recipe:
 	"""
@@ -21,10 +27,16 @@ class recipe:
 	def __init__(self, filedesc, entrypath):
 		self.file = filedesc
 		self.entry = entrypath
-		self.title = "NXtomo discover"
+		self.title = "NXtomo"
+
+	def _validate(self, nxTomo):
+		pass
 
 	def process(self):
-		nxTomo = get_NXtomo(self.file, self.entry)
-		if nxTomo is not None:
-			return {"NXtomo" : nxTomo}
+		nxTomo = _NXTomoFinder()
+		nxTomoList = nxTomo.get_NXtomo(self.file, self.entry)
+		for NXtomoEntry in nxTomoList:
+			self._validate(NXtomoEntry)
+		if len(nxTomoList) > 0:
+			return {"NXtomo" : nxTomoList}
 		raise Exception("This feature does not validate correctly")
