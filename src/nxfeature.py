@@ -84,8 +84,8 @@ if __name__ == '__main__':
 				print("\t%s (%d) %s" % (entry.feature_title(feat), feat, response))
 			except AssertionError as ae:
 				fail_list.append((feat, ae.message))
-			except:
-				fail_list.append((feat, "Undefined validation error"))
+			except Exception as e:
+				fail_list.append((feat, "Undefined validation error:(%s)" % e.message ))
 	
 		if len(fail_list) > 0:
 			print("\nThe following features failed to validate:")
