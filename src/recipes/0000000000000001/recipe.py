@@ -29,14 +29,34 @@ class recipe:
 		self.entry = entrypath
 		self.title = "NXtomo"
 
-	def _validate(self, nxTomo):
-		pass
+	def extract(self, nxTomo):
+		extracted = {"NXtomo":nxTomo}
+		failures = []
+		for item in ['title', 'start_time', 'end_time', 'definition']:
+			if item in nxTomo.keys():
+				extracted[item] = nxTomo[item]
+			else :
+				failures.append("'%s' is missing from the NXtomo entry" % (item))
+		
+		# Check control
+		if "control" in nxTomo.keys():
+			control = nxTomo['control']
+		else :
+			failures.append("NXMonitor control is missing from the NXtomo entry")
+		
+		return (extracted, failures)
 
 	def process(self):
 		nxTomo = _NXTomoFinder()
 		nxTomoList = nxTomo.get_NXtomo(self.file, self.entry)
+		if len(nxTomoList) == 0:
+			 raise AssertionError("No NXtomo entries in this entry")
+		entries = []
+		failures = []
 		for NXtomoEntry in nxTomoList:
-			self._validate(NXtomoEntry)
-		if len(nxTomoList) > 0:
-			return {"NXtomo" : nxTomoList}
-		raise Exception("This feature does not validate correctly")
+			entry, failure = self.extract(NXtomoEntry)
+			entries.append(entry)
+			failures += failure
+		if len(failures) > 0:
+			raise AssertionError('\n'.join(failures))
+		return entries
