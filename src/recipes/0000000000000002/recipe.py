@@ -26,4 +26,4 @@ class recipe:
 		nxDet = get_NXdetector_with_image_key(self.file, self.entry)
 		if nxDet is not None:
 			return {"NXdetector with image_key" : nxDet}
-		raise Exception("This feature does not validate correctly")
+		raise AssertionError("This file does not contain an NXdetector with the image_key field")
