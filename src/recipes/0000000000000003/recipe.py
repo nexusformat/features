@@ -24,4 +24,4 @@ class recipe:
 		gda_scan = get_gda_scan_command(self.file, self.entry)
 		if gda_scan is not None:
 			return {"GDA scan command" : gda_scan}
-		raise Exception("This feature does not validate correctly")
+		raise AssertionError("There is no GDA scan command in this file.")
