@@ -1,18 +1,37 @@
+def check_nframes(context, nxTomo, item, values, fails):
+	frames = nxTomo[item].shape[0];
+	if (not 'nFrames' in context.keys()) and frames != 1:
+		context['nFrames'] = frames
+		context['nFrames_item'] = item
+	else :
+		if not frames in [context['nFrames'], 1]:
+			fails.append("'%s' does not have the same number of frames as '%s'" % (item, context['nFrames_item']))
+
+def include_data(context, nxTomo, item, values, fails):
+	values[item] = nxTomo[item];
+		
+def check_image_keys(context, nxTomo, item, values, fails):
+	data = nxTomo[item][...]
+	if data.max() > 3 or data.min() < 0:
+		fails.append("'%s' has values outside of the normal range 0 to 3" % (item))
+
+
 INCLUDE_DATA = 'include_data'
 CHECK_NFRAMES = 'check_nframes'
+CHECK_IMAGE_KEYS = 'check_image_keys'
 VALIDATE = {
 			"control": [],
-			"control/data": [CHECK_NFRAMES], 
+			"control/data": [check_nframes], 
 			"data":[],
-			"data/image_key":[INCLUDE_DATA],
-			"data/rotation_angle":[INCLUDE_DATA,CHECK_NFRAMES],
-			"data/data":[INCLUDE_DATA,CHECK_NFRAMES],
+			"data/image_key":[include_data, check_image_keys],
+			"data/rotation_angle":[include_data,check_nframes],
+			"data/data":[include_data,check_nframes],
 			"definition":[],
 			"instrument":[],
 			"instrument/detector":[],
-			"instrument/detector/data":[CHECK_NFRAMES],
+			"instrument/detector/data":[check_nframes],
 			"instrument/detector/distance":[],
-			"instrument/detector/image_key":[CHECK_NFRAMES],
+			"instrument/detector/image_key":[check_nframes, check_image_keys],
 			"instrument/detector/x_pixel_size":[],
 			"instrument/detector/y_pixel_size":[],
 			"instrument/detector/x_rotation_axis_pixel_position":[],
@@ -25,10 +44,10 @@ VALIDATE = {
 			"instrument/source/type":[],
 			"sample":[],
 			"sample/name":[],
-			"sample/rotation_angle":[CHECK_NFRAMES],
-			"sample/x_translation":[CHECK_NFRAMES],
-			"sample/y_translation":[CHECK_NFRAMES],
-			"sample/z_translation":[CHECK_NFRAMES],
+			"sample/rotation_angle":[check_nframes],
+			"sample/x_translation":[check_nframes],
+			"sample/y_translation":[check_nframes],
+			"sample/z_translation":[check_nframes],
 			"title":[],
 			"start_time":[],
 			"end_time":[],
@@ -60,23 +79,14 @@ def check_path(entry, path):
 	return True
 
 def validate(nxTomo):
+	context = {}
 	values = {}
 	fails = []
-	nFrames = None
-	nFrames_item = ""
 
 	for item in VALIDATE.keys():
 		if check_path(nxTomo, item):
-			if INCLUDE_DATA in VALIDATE[item]:
-				values[item] = nxTomo[item];
-			if CHECK_NFRAMES in VALIDATE[item]:
-				frames = nxTomo[item].shape[0];
-				if nFrames == None and frames != 1:
-					nFrames = frames
-					nFrames_item = item
-				else :
-					if not frames in [nFrames, 1]:
-						fails.append("'%s' does not have the same number of frames as '%s'" % (item, nFrames_item))					
+			for test in VALIDATE[item]:
+				test(context, nxTomo, item, values, fails)
 		else:
 			fails.append("'NXtomo/%s' is missing from the NXtomo entry" % (item))
 	if len(fails) > 0:
