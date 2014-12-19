@@ -5,7 +5,9 @@ $ python src/nxfeature.py filewithfeature.nxs
 
 should
 * lookup the feature in the file
-* successfully load and instatiate the recipe class
+* successfully load and instantiate the recipe class
 * process the feature and output 
 
 The output at the moment is the list of transformations the sample has undergone.
+
+you can use the -t flag to test the file against all possible recipes.
