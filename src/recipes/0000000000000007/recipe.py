@@ -9,7 +9,7 @@ def check_len(context, entry, item, values, fails):
 
 def check_int(context, entry, item, value, fails):
   dtype = entry[item].dtype
-  if not dtype in ["int32", "int64"]:
+  if not dtype in ["int64"]:
     fails.append("'%s' is of type %s, expected int32 or int64" % (item, dtype))
 
 def check_bool(context, entry, item, value, fails):
