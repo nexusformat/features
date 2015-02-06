@@ -1,34 +1,38 @@
-def check_len(context, entry, item, values, fails):
-  frames = entry[item].shape[0];
-  if (not 'nFrames' in context.keys()) and frames != 1:
-    context['nFrames'] = frames
-    context['nFrames_item'] = item
-  else :
-    if not frames in [context['nFrames'], 1]:
-      fails.append("'%s' does not have the same number of frames as '%s'" % (item, context['nFrames_item']))
 
 class check_dset(object):
+  ''' 
+  Check properties of a dataset
+
+  '''
 
   def __init__(self, dtype=None, dims=None, shape=None, same_shape_as=None):
+    '''
+    Set stuff to check
+    :param dtype:         The datatype
+    :param dims:          The number of dimensions
+    :param shape:         The shape of the dataset
+    :param same_shape_as: A dataset this should match in shape
+
+    '''
     self.dtype = dtype
     self.dims = dims
     self.shape = shape
     self.same_shape_as = same_shape_as
 
-  def __call__(self, context, entry, item, values, fails):
+  def __call__(self, context, nx_file, item, values, fails):
     from os.path import isabs, dirname, join
     if self.dtype is not None:
-      dtype = entry[item].dtype
+      dtype = nx_file[item].dtype
       if not dtype == self.dtype:
         fails.append("'%s' is of type %s, expected %s" % (
           item, dtype, self.dtype))
     if self.dims is not None:
-      dims = len(entry[item].shape)
+      dims = len(nx_file[item].shape)
       if not dims == self.dims:
         fails.append("'%s' has dims=%d, expected %d" % (
           item, dims, self.dims))
     if self.shape is not None:
-      shape = entry[item].shape
+      shape = nx_file[item].shape
       if not shape == self.shape:
         fails.append("'%s' has shape=%s, expected %s" % (
           item, str(shape), str(self.shape)))
@@ -37,26 +41,30 @@ class check_dset(object):
         other = join(dirname(item), self.same_shape_as)
       else:
         other = self.same_shape_as
-      shape1 = entry[item].shape
-      shape2 = entry[other].shape
+      shape1 = nx_file[item].shape
+      shape2 = nx_file[other].shape
       if not shape1 == shape2:
         fails.append("'%s' does not have same shape as '%s' (%s)" % (
           item, str(shape1), other, str(shape2)))
 
 class check_depends_on(object):
+  '''
+  Check the dependancy chain to make sure it terminates and doesn't 
+  contain loops.
 
+  '''
   def __init__(self):
     pass
 
-  def __call__(self, context, entry, item, values, fails):
+  def __call__(self, context, nx_file, item, values, fails):
     dependency_chain = []
     assert(item.count("@") <= 1)
     if item.count("@") == 1:
       item, attr = item.split("@")
-      depends_on = entry[item].attrs[attr]
+      depends_on = nx_file[item].attrs[attr]
     else:
-      depends_on = entry[item].value
-    nx_file = entry.file
+      depends_on = nx_file[item].value
+    nx_file = nx_file.file
     while not depends_on == ".":
       if depends_on in dependency_chain:
         fails.append("'%s' is a circular dependency" % depends_on)
@@ -73,43 +81,84 @@ class check_depends_on(object):
         break
 
 class check_attr(object):
+  '''
+  Check some properties of an attribute
 
-  def __init__(self, name, tests=None):
+  '''
+
+  def __init__(self, name, value=None, tests=None):
+    '''
+    Set stuff to check
+    :param name:  The name of the attribute
+    :param value: The value of the attribute
+    :param tests: A list of tests to run
+
+    '''
     self.name = name
+    self.value = value
     self.tests = tests
 
-  def __call__(self, context, entry, item, values, fails):
-    if not self.name in entry[item]:
+  def __call__(self, context, nx_file, item, values, fails):
+    if not self.name in nx_file[item].attrs.keys():
       fails.append("'%s' does not have an attribute '%s'" % (
         item, self.name))
+    elif self.value is not None and nx_file[item].attrs[self.name] != self.value:
+      fails.append("attribute '%s' of %s has value %s, expected %s" % (
+        self.name, item, nx_file[item].attrs[self.name], self.value))
     if self.tests is not None:
       from os.path import join
       path = item
-      for test in tests:
-        test(context, entry, item + "@" + self.name, values, fails)
+      for test in self.tests:
+        test(context, nx_file, item + "@" + self.name, values, fails)
 
 class check_nx_class(object):
+  '''
+  Base class to test an NXclass
 
-  def __call__(self, context, entry, item, values, fails):
+  '''
+
+  def __call__(self, context, nx_file, item, values, fails):
     from os.path import join
     path = item
     for item, detail in self.items.iteritems():
-      item = join(path, item)
-      min_occurs = detail['minOccurs']
+      min_occurs = detail["minOccurs"]
       tests = detail['tests']
-      assert(min_occurs in [0, 1])
-      if check_path(entry, item):
-        for test in tests:
-          test(context, entry, item, values, fails)
-      elif min_occurs == 1:
-        fails.append("'%s' is missing from the NXmx entry" % (item))
+      if "class" in detail:
+        instances = self.find(nx_file, item)
+        if len(instances) < min_occurs:
+          raise AssertionError("No instances of %s found, expected" % (item, min_occurs))
+        for item in instances:
+          self.process(context, nx_file, item.name, 1, tests, values, fails)
+      else:
+        self.process(context, nx_file, join(path,item), min_occurs, tests, values, fails)
     return values
 
+  def find(self, nx_file, nx_class):
+    hits = []
+    def visitor(name, obj):
+      if "NX_class" in obj.attrs.keys():
+        if obj.attrs["NX_class"] in [nx_class]:
+          hits.append(obj)
+    nx_file.visititems(visitor)
+    return hits
+
+  def process(self, context, nx_file, item, min_occurs, tests, values, fails):
+    assert(min_occurs in [0, 1])
+    if check_path(nx_file, item):
+      for test in tests:
+        test(context, nx_file, item, values, fails)
+    elif min_occurs == 1:
+      fails.append("'%s' is missing from the nx file" % (item))
+
 class check_nx_detector_module(check_nx_class):
+  '''
+  Check the contents of an NXdetector_module
+
+  '''
 
   def __init__(self):
     from os.path import join
-      
+
     # The items to validate
     self.items = { 
       "data_origin" : { 
@@ -163,6 +212,10 @@ class check_nx_detector_module(check_nx_class):
     }
     
 class check_nx_detector(check_nx_class):
+  '''
+  Check the contents of an NXdetector
+
+  '''
 
   def __init__(self):
     from os.path import join
@@ -313,7 +366,8 @@ class check_nx_detector(check_nx_class):
         "minOccurs" : 1,
         "tests" : []
       },
-      "detector_module" : {
+      "NXdetector_module" : {
+        "class" : True,
         "minOccurs" : 1,
         "tests" : [
           check_nx_detector_module(),
@@ -322,6 +376,10 @@ class check_nx_detector(check_nx_class):
     } 
 
 class check_nx_attenuator(check_nx_class):
+  '''
+  Check the contents of an NXattenuator
+
+  '''
   
   def __init__(self):
     self.items = {
@@ -332,6 +390,10 @@ class check_nx_attenuator(check_nx_class):
     }
 
 class check_nx_beam(check_nx_class):
+  '''
+  Check the contents of an NXbeam
+
+  '''
 
   def __init__(self):
     self.items = {
@@ -424,6 +486,10 @@ class check_nx_beam(check_nx_class):
     }
 
 class check_nx_sample(check_nx_class):
+  '''
+  Check the contents of an NXsample
+
+  '''
 
   def __init__(self):
     self.items = {
@@ -475,7 +541,8 @@ class check_nx_sample(check_nx_class):
         "minOccurs" : 1,
         "tests" : []
       },
-      "beam" : {
+      "NXbeam" : {
+        "class" : True,
         "minOccurs" : 1,
         "tests" : [
           check_nx_beam()
@@ -483,7 +550,36 @@ class check_nx_sample(check_nx_class):
       }
     }
 
+class check_nx_instrument(check_nx_class):
+  '''
+  Check the contents of an NXinstrument
+
+  '''
+
+  def __init__(self):
+
+    self.items = {
+      "NXattenuator" : {
+        "class" : True,
+        "minOccurs" : 0,
+        "tests" : [
+          check_nx_attenuator()
+        ]
+      },
+      "NXdetector" : {
+        "class" : True,
+        "minOccurs" : 1,
+        "tests" : [
+          check_nx_detector()
+        ],
+      },
+    }
+
 class check_nx_mx(check_nx_class):
+  '''
+  Check the contents of an NXmn entry
+
+  '''
   
   def __init__(self):
 
@@ -508,21 +604,13 @@ class check_nx_mx(check_nx_class):
       },
       "instrument" : {
         "minOccurs" : 1,
-        "tests" : []
-      },
-      "instrument" : {
-        "minOccurs" : 1,
         "tests" : [
-          check_nx_attenuator()
+          check_nx_instrument(),
+          check_attr("NXclass", "NXinstrument")
         ]
       },
-      "instrument/detector" : {
-        "minOccurs" : 1,
-        "tests" : [
-          check_nx_detector()
-        ],
-      },
-      "sample" : {
+      "NXsample" : {
+        "class" : True,
         "minOccurs" : 1,
         "tests" : [
           check_nx_sample(),
@@ -531,6 +619,10 @@ class check_nx_mx(check_nx_class):
     }
 
 def find_nx_mx_entries(nx_file, entry):
+  ''' 
+  Find NXmx entries 
+  
+  '''
   hits = []
   def visitor(name, obj):
     if "NX_class" in obj.attrs.keys():
@@ -541,22 +633,29 @@ def find_nx_mx_entries(nx_file, entry):
   nx_file[entry].visititems(visitor)
   return hits
 
-def validate(entry, test):
+def validate(nx_file, item, test):
+  '''
+  Validate the NXmx entries
+
+  '''
   values = []
   fails = []
   context = {}
-  test(context, entry, '', values, fails)
+  test(context, nx_file, item, values, fails)
   if len(fails) > 0:
     raise AssertionError('\n'.join(fails))
   return values
 
-def check_path(entry, path):
-  section = entry
-  for part in path.split('/'):
-    if part in section.keys():
-      section = section[part]
-    else :
-      return False
+def check_path(nx_file, path):
+  '''
+  Ensure path exists
+
+  '''
+  section = nx_file
+  try:
+    nx_file[path]
+  except Exception:
+    return False
   return True
 
 class recipe:
@@ -574,4 +673,7 @@ class recipe:
     entries = find_nx_mx_entries(self.file, self.entry)
     if len(entries) == 0:
       raise AssertionError('No NXmx entries found')
-    return map(lambda entry: validate(entry, check_nx_mx()), entries)
+    return map(lambda entry: validate(
+                self.file, 
+                entry.name, 
+                check_nx_mx()), entries)
