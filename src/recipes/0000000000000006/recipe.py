@@ -43,15 +43,50 @@ class check_dset(object):
         fails.append("'%s' does not have same shape as '%s' (%s)" % (
           item, str(shape1), other, str(shape2)))
 
+class check_depends_on(object):
+
+  def __init__(self):
+    pass
+
+  def __call__(self, context, entry, item, values, fails):
+    dependency_chain = []
+    assert(item.count("@") <= 1)
+    if item.count("@") == 1:
+      item, attr = item.split("@")
+      depends_on = entry[item].attrs[attr]
+    else:
+      depends_on = entry[item].value
+    nx_file = entry.file
+    while not depends_on == ".":
+      if depends_on in dependency_chain:
+        fails.append("'%s' is a circular dependency" % depends_on)
+      try:
+        item = nx_file[depends_on]
+      except Exception:
+        fails.append("'%s' is missing from nx_file" % depends_on)
+        break
+      dependency_chain.append(depends_on)
+      try:
+        depends_on = nx_file[depends_on].attrs["depends_on"]
+      except Exception:
+        fails.append("'%s' contains no depends_on attribute" % depends_on)
+        break
+
 class check_attr(object):
 
-  def __init__(self, name):
+  def __init__(self, name, tests=None):
     self.name = name
+    self.tests = tests
 
   def __call__(self, context, entry, item, values, fails):
     if not self.name in entry[item]:
       fails.append("'%s' does not have an attribute '%s'" % (
         item, self.name))
+    if self.tests is not None:
+      from os.path import join
+      path = item
+      for test in tests:
+        test(context, entry, item + "@" + self.name, values, fails)
 
 class check_nx_class(object):
 
@@ -96,7 +131,9 @@ class check_nx_detector_module(check_nx_class):
           check_attr("transformation_type"), 
           check_attr("vector"), 
           check_attr("offset"),
-          check_attr("depends_on")
+          check_attr("depends_on", tests=[
+            check_depends_on(),
+          ])
         ] 
       },
       "fast_pixel_direction" : {
@@ -106,7 +143,9 @@ class check_nx_detector_module(check_nx_class):
           check_attr("transformation_type"), 
           check_attr("vector"), 
           check_attr("offset"),
-          check_attr("depends_on")
+          check_attr("depends_on", tests=[
+            check_depends_on(),
+          ])
         ] 
       },
       "slow_pixel_direction" : {
@@ -116,7 +155,9 @@ class check_nx_detector_module(check_nx_class):
           check_attr("transformation_type"), 
           check_attr("vector"), 
           check_attr("offset"),
-          check_attr("depends_on")
+          check_attr("depends_on", tests=[
+            check_depends_on(),
+          ])
         ] 
       },
     }
@@ -130,7 +171,9 @@ class check_nx_detector(check_nx_class):
     self.items = {
       "depends_on" : {
         "minOccurs" : 1,
-        "tests" : []
+        "tests" : [
+          check_depends_on()
+        ]
       },
       "data" : {
         "minOccurs" : 1,
@@ -292,26 +335,92 @@ class check_nx_beam(check_nx_class):
 
   def __init__(self):
     self.items = {
+      "distance" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64", shape=(1,))
+        ]
+      },
+      "incident_energy" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64")
+        ]
+      },
+      "final_energy" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64")
+        ]
+      },
+      "energy_transfer" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64")
+        ]
+      },
       "incident_wavelength" : {
         "minOccurs" : 1,
         "tests" : [
           check_dset(dtype="float64", shape=(1,))
         ]
       },
-      "flux" : {
-        "minOccurs" : 1,
+      "incident_wavelength_spread" : {
+        "minOccurs" : 0,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64")
+        ]
+      },
+      "incident_wavelength_spectrum" : {
+        "minOccurs" : 0,
+        "tests" : []
+      },
+      "incident_beam_divergence" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64")
+        ]
+      },
+      "final_wavelength" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64")
+        ]
+      },
+      "incident_polarization" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64")
         ]
       },
       "incident_polarization_stokes" : {
         "minOccurs" : 0,
         "tests" : []
       },
-      "incident_wavelength_spectrum" : {
+      "final_polarization" : {
         "minOccurs" : 0,
-        "tests" : []
-      }
+        "tests" : [
+          check_dset(dtype="float64")
+        ]
+      },
+      "final_wavelength_spread" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64")
+        ]
+      },
+      "final_beam_divergence" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64")
+        ]
+      },
+      "flux" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64", shape=(1,))
+        ]
+      },
     }
 
 class check_nx_sample(check_nx_class):
@@ -324,7 +433,39 @@ class check_nx_sample(check_nx_class):
       },
       "depends_on" : {
         "minOccurs" : 1,
+        "tests" : [
+          check_depends_on()
+        ]
+      },
+      "chemical_formula" : {
+        "minOccurs" : 0,
         "tests" : []
+      },
+      "unit_cell" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64", dims=2)
+        ]
+      },
+      "unit_cell_class" : {
+        "minOccurs" : 0,
+        "tests" : []
+      },
+      "unit_cell_group" : {
+        "minOccurs" : 0,
+        "tests" : []
+      },
+      "sample_orientation" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64", shape=(3,))
+        ]
+      },
+      "orientation_matrix" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64", dims=3)
+        ]
       },
       "temperature" : {
         "minOccurs" : 1,
@@ -388,8 +529,6 @@ class check_nx_mx(check_nx_class):
         ]
       }
     }
-
-
 
 def find_nx_mx_entries(nx_file, entry):
   hits = []
