@@ -5,22 +5,31 @@ class check_dset(object):
 
   '''
 
-  def __init__(self, dtype=None, dims=None, shape=None, same_shape_as=None):
+  def __init__(self, 
+               dtype=None, 
+               dims=None, 
+               shape=None, 
+               same_shape_as=None, 
+               linked=None,
+               is_scalar=None):
     '''
     Set stuff to check
     :param dtype:         The datatype
     :param dims:          The number of dimensions
     :param shape:         The shape of the dataset
     :param same_shape_as: A dataset this should match in shape
+    :param linked:        A dataset this should be linked to
 
     '''
     self.dtype = dtype
     self.dims = dims
     self.shape = shape
     self.same_shape_as = same_shape_as
+    self.linked = linked
+    self.is_scalar = is_scalar
 
   def __call__(self, context, nx_file, item, values, fails):
-    from os.path import isabs, dirname, join
+    from os.path import isabs, dirname, join, abspath
     if self.dtype is not None:
       dtype = nx_file[item].dtype
       if not dtype == self.dtype:
@@ -38,14 +47,29 @@ class check_dset(object):
           item, str(shape), str(self.shape)))
     if self.same_shape_as is not None:
       if not isabs(self.same_shape_as):
-        other = join(dirname(item), self.same_shape_as)
+        other = abspath(join(dirname(item), self.same_shape_as))
       else:
-        other = self.same_shape_as
+        other = abspath(self.same_shape_as)
       shape1 = nx_file[item].shape
       shape2 = nx_file[other].shape
       if not shape1 == shape2:
         fails.append("'%s' does not have same shape as '%s' (%s)" % (
           item, str(shape1), other, str(shape2)))
+    if self.is_scalar is not None:
+      try:
+        data = nx_file[item].value
+        s = True
+      except Exception:
+        s = False
+      if s != self.is_scalar:
+        fails.append("'%s' is scalar == %s, expected %s" % (item, s, self.is_scalar))
+    if self.linked is not None:
+      if not isabs(self.linked):
+        other = abspath(join(dirname(item), self.linked))
+      else:
+        other = abspath(self.linked)
+      if nx_file[item] != nx_file[other]:
+        fails.append("'%s' is not linked to %s" % (item, other))
 
 class check_depends_on(object):
   '''
@@ -164,19 +188,19 @@ class check_nx_detector_module(check_nx_class):
       "data_origin" : { 
         "minOccurs" : 1, 
         "tests" : [
-          check_dset(dtype="uint64", shape=(2,))
+          check_dset(dtype="int64", shape=(2,))
         ] 
       },
       "data_size" : { 
         "minOccurs" : 1, 
         "tests" : [
-          check_dset(dtype="uint64", shape=(2,))
+          check_dset(dtype="int64", shape=(2,))
         ] 
       },
       "module_offset" : { 
         "minOccurs" : 1, 
         "tests" : [
-          check_dset(dtype="uint64", shape=(1,)), 
+          check_dset(dtype="float64", is_scalar=True), 
           check_attr("transformation_type"), 
           check_attr("vector"), 
           check_attr("offset"),
@@ -188,7 +212,7 @@ class check_nx_detector_module(check_nx_class):
       "fast_pixel_direction" : {
         "minOccurs" : 1, 
         "tests" : [
-          check_dset(dtype="float64", shape=(1,)), 
+          check_dset(dtype="float64", is_scalar=True), 
           check_attr("transformation_type"), 
           check_attr("vector"), 
           check_attr("offset"),
@@ -200,7 +224,7 @@ class check_nx_detector_module(check_nx_class):
       "slow_pixel_direction" : {
         "minOccurs" : 1, 
         "tests" : [
-          check_dset(dtype="float64", shape=(1,)), 
+          check_dset(dtype="float64", is_scalar=True), 
           check_attr("transformation_type"), 
           check_attr("vector"), 
           check_attr("offset"),
@@ -245,101 +269,107 @@ class check_nx_detector(check_nx_class):
       "distance" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "dead_time" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "count_time" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "beam_centre_x" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "beam_centre_y" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "angular_calibration_applied" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
-          check_dset(dtype="bool", shape=(1,))
+          check_dset(dtype="bool", is_scalar=True)
+        ]
+      },
+      "angular_calibration" : {
+        "minOccurs" : 0,
+        "tests" : [
+          check_dset(dtype="float64", same_shape_as="data")
         ]
       },
       "flatfield_applied" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
-          check_dset(dtype="bool", shape=(1,))
+          check_dset(dtype="bool", is_scalar=True)
         ]
       },
       "flatfield" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
           check_dset(dtype="float64", same_shape_as="data")
         ]
       },
       "flatfield_error" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
           check_dset(dtype="float64", same_shape_as="data")
         ]
       },
       "pixel_mask_applied" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
-          check_dset(dtype="bool", shape=(1,))
+          check_dset(dtype="bool", is_scalar=True)
         ]
       },
       "pixel_mask" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
           check_dset(dtype="int32", same_shape_as="data")
         ]
       },
       "countrate_correction_applied" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
-          check_dset(dtype="bool", shape=(1,))
+          check_dset(dtype="bool", is_scalar=True)
         ]
       },
       "bit_depth_readout" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="uint64", shape=(1,))
+          check_dset(dtype="int64", is_scalar=True)
         ]
       },
       "detector_readout_time" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "frame_time" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "gain_setting" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : []
       },
       "saturation_value" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="int64", shape=(1,))
+          check_dset(dtype="int64", is_scalar=True)
         ]
       },
       "sensor_material" : {
@@ -349,20 +379,16 @@ class check_nx_detector(check_nx_class):
       "sensor_thickness" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "threshold_energy" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "type" : {
-        "minOccurs" : 1,
-        "tests" : []
-      },
-      "transformations" : {
         "minOccurs" : 1,
         "tests" : []
       },
@@ -397,90 +423,26 @@ class check_nx_beam(check_nx_class):
 
   def __init__(self):
     self.items = {
-      "distance" : {
-        "minOccurs" : 0,
-        "tests" : [
-          check_dset(dtype="float64", shape=(1,))
-        ]
-      },
-      "incident_energy" : {
-        "minOccurs" : 0,
-        "tests" : [
-          check_dset(dtype="float64")
-        ]
-      },
-      "final_energy" : {
-        "minOccurs" : 0,
-        "tests" : [
-          check_dset(dtype="float64")
-        ]
-      },
-      "energy_transfer" : {
-        "minOccurs" : 0,
-        "tests" : [
-          check_dset(dtype="float64")
-        ]
-      },
       "incident_wavelength" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
-        ]
-      },
-      "incident_wavelength_spread" : {
-        "minOccurs" : 0,
-        "tests" : [
-          check_dset(dtype="float64")
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "incident_wavelength_spectrum" : {
         "minOccurs" : 0,
         "tests" : []
       },
-      "incident_beam_divergence" : {
-        "minOccurs" : 0,
-        "tests" : [
-          check_dset(dtype="float64")
-        ]
-      },
-      "final_wavelength" : {
-        "minOccurs" : 0,
-        "tests" : [
-          check_dset(dtype="float64")
-        ]
-      },
-      "incident_polarization" : {
-        "minOccurs" : 0,
-        "tests" : [
-          check_dset(dtype="float64")
-        ]
-      },
       "incident_polarization_stokes" : {
         "minOccurs" : 0,
-        "tests" : []
-      },
-      "final_polarization" : {
-        "minOccurs" : 0,
         "tests" : [
-          check_dset(dtype="float64")
-        ]
-      },
-      "final_wavelength_spread" : {
-        "minOccurs" : 0,
-        "tests" : [
-          check_dset(dtype="float64")
-        ]
-      },
-      "final_beam_divergence" : {
-        "minOccurs" : 0,
-        "tests" : [
-          check_dset(dtype="float64")
+          check_dset(dtype="float64", shape=(4,))  
         ]
       },
       "flux" : {
         "minOccurs" : 0,
         "tests" : [
-          check_dset(dtype="float64", shape=(1,))
+          check_dset(dtype="float64", is_scalar=True)
         ]
       },
     }
@@ -508,7 +470,7 @@ class check_nx_sample(check_nx_class):
         "tests" : []
       },
       "unit_cell" : {
-        "minOccurs" : 0,
+        "minOccurs" : 1,
         "tests" : [
           check_dset(dtype="float64", dims=2)
         ]
@@ -518,7 +480,7 @@ class check_nx_sample(check_nx_class):
         "tests" : []
       },
       "unit_cell_group" : {
-        "minOccurs" : 0,
+        "minOccurs" : 1,
         "tests" : []
       },
       "sample_orientation" : {
@@ -528,13 +490,13 @@ class check_nx_sample(check_nx_class):
         ]
       },
       "orientation_matrix" : {
-        "minOccurs" : 0,
+        "minOccurs" : 1,
         "tests" : [
           check_dset(dtype="float64", dims=3)
         ]
       },
       "temperature" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : []
       },
       "transformations" : {
@@ -589,11 +551,11 @@ class check_nx_mx(check_nx_class):
         "tests" : []
       },
       "start_time" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : []
       },
       "end_time" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : []
       },
       "data" : {
@@ -606,7 +568,7 @@ class check_nx_mx(check_nx_class):
         "minOccurs" : 1,
         "tests" : [
           check_nx_instrument(),
-          check_attr("NXclass", "NXinstrument")
+          check_attr("NX_class", "NXinstrument")
         ]
       },
       "NXsample" : {
