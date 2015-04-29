@@ -150,7 +150,7 @@ class check_nx_class(object):
       if "class" in detail:
         instances = self.find(nx_file, item)
         if len(instances) < min_occurs:
-          raise AssertionError("No instances of %s found, expected" % (item, min_occurs))
+          raise AssertionError("No instances of %s found, expected %i" % (item, min_occurs))
         for item in instances:
           self.process(context, nx_file, item.name, 1, tests, values, fails)
       else:
@@ -592,6 +592,8 @@ def find_nx_mx_entries(nx_file, entry):
         if "definition" in obj.keys():
           if obj["definition"].value == "NXmx":
             hits.append(obj)
+  # run the visit on itself first
+  visitor(entry, nx_file[entry])
   nx_file[entry].visititems(visitor)
   return hits
 
