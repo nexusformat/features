@@ -99,14 +99,14 @@ class check_depends_on(object):
       item, attr = item.split("@")
       depends_on = nx_file[item].attrs[attr]
     else:
-      depends_on = nx_file[item].value
+      depends_on = nx_file[item][0]
     nx_file = nx_file.file
     while not depends_on == ".":
       if depends_on in dependency_chain:
         fails.append("'%s' is a circular dependency" % depends_on)
       try:
         item = nx_file[depends_on]
-      except Exception:
+      except Exception, e:
         fails.append("'%s' is missing from nx_file" % depends_on)
         break
       dependency_chain.append(depends_on)
@@ -470,7 +470,7 @@ class check_nx_data(check_nx_class):
       "data" : {
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dtype=["float32", "float64", "int32", "int64"], dims=3)
+          check_dset(dtype=["float32", "float64", "int32", "int64", "int16"], dims=3)
         ]
       }
     }
