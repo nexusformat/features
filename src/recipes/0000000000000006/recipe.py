@@ -21,6 +21,9 @@ class check_dset(object):
     :param linked:        A dataset this should be linked to
 
     '''
+    if dtype is not None:
+      if not isinstance(dtype, list) and not isinstance(dtype, tuple):
+        dtype = [dtype]
     self.dtype = dtype
     self.dims = dims
     self.shape = shape
@@ -30,46 +33,55 @@ class check_dset(object):
 
   def __call__(self, context, nx_file, item, values, fails):
     from os.path import isabs, dirname, join, abspath
-    if self.dtype is not None:
-      dtype = nx_file[item].dtype
-      if not dtype == self.dtype:
-        fails.append("'%s' is of type %s, expected %s" % (
-          item, dtype, self.dtype))
-    if self.dims is not None:
-      dims = len(nx_file[item].shape)
-      if not dims == self.dims:
-        fails.append("'%s' has dims=%d, expected %d" % (
-          item, dims, self.dims))
-    if self.shape is not None:
-      shape = nx_file[item].shape
-      if not shape == self.shape:
-        fails.append("'%s' has shape=%s, expected %s" % (
-          item, str(shape), str(self.shape)))
-    if self.same_shape_as is not None:
-      if not isabs(self.same_shape_as):
-        other = abspath(join(dirname(item), self.same_shape_as))
-      else:
-        other = abspath(self.same_shape_as)
-      shape1 = nx_file[item].shape
-      shape2 = nx_file[other].shape
-      if not shape1 == shape2:
-        fails.append("'%s' does not have same shape as '%s' (%s)" % (
-          item, str(shape1), other, str(shape2)))
-    if self.is_scalar is not None:
-      try:
-        data = nx_file[item].value
-        s = True
-      except Exception:
-        s = False
-      if s != self.is_scalar:
-        fails.append("'%s' is scalar == %s, expected %s" % (item, s, self.is_scalar))
-    if self.linked is not None:
-      if not isabs(self.linked):
-        other = abspath(join(dirname(item), self.linked))
-      else:
-        other = abspath(self.linked)
-      if nx_file[item] != nx_file[other]:
-        fails.append("'%s' is not linked to %s" % (item, other))
+    try:
+      if self.dtype is not None:
+        dtype = nx_file[item].dtype
+        if not dtype in self.dtype:
+          fails.append("'%s' is of type %s, expected %s" % (
+            item, dtype, self.dtype))
+      if self.dims is not None:
+        dims = len(nx_file[item].shape)
+        if not dims == self.dims:
+          fails.append("'%s' has dims=%d, expected %d" % (
+            item, dims, self.dims))
+      if self.shape is not None:
+        shape = nx_file[item].shape
+        if not shape == self.shape:
+          fails.append("'%s' has shape=%s, expected %s" % (
+            item, str(shape), str(self.shape)))
+      if self.same_shape_as is not None:
+        if not isabs(self.same_shape_as):
+          other = abspath(join(dirname(item), self.same_shape_as))
+        else:
+          other = abspath(self.same_shape_as)
+        shape1 = nx_file[item].shape
+        shape2 = nx_file[other].shape
+        if not shape1 == shape2:
+          fails.append("'%s' does not have same shape as '%s' (%s)" % (
+            item, str(shape1), other, str(shape2)))
+      if self.is_scalar is not None:
+        try:
+          data = nx_file[item].value
+          s = True
+        except Exception:
+          s = False
+        if s != self.is_scalar:
+          fails.append("'%s' is scalar == %s, expected %s" % (item, s, self.is_scalar))
+      if self.linked is not None:
+        if not isabs(self.linked):
+          other = abspath(join(dirname(item), self.linked))
+        else:
+          other = abspath(self.linked)
+        if nx_file[item] != nx_file[other]:
+          fails.append("'%s' is not linked to %s" % (item, other))
+    except Exception, e:
+      raise RuntimeError(
+        '''
+        Failed in check_dset for "%s"
+
+        %s
+
+        ''' % (item, str(e)))
 
 class check_depends_on(object):
   '''
@@ -200,7 +212,7 @@ class check_nx_detector_module(check_nx_class):
       "module_offset" : { 
         "minOccurs" : 1, 
         "tests" : [
-          check_dset(dtype="float64", is_scalar=True), 
+          check_dset(dtype=["float64", "float32", "int64", "int32"], is_scalar=True), 
           check_attr("transformation_type"), 
           check_attr("vector"), 
           check_attr("offset"),
@@ -267,7 +279,7 @@ class check_nx_detector(check_nx_class):
         "tests" : []
       },
       "distance" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
           check_dset(dtype="float64", is_scalar=True)
         ]
@@ -285,13 +297,13 @@ class check_nx_detector(check_nx_class):
         ]
       },
       "beam_centre_x" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
           check_dset(dtype="float64", is_scalar=True)
         ]
       },
       "beam_centre_y" : {
-        "minOccurs" : 1,
+        "minOccurs" : 0,
         "tests" : [
           check_dset(dtype="float64", is_scalar=True)
         ]
@@ -447,6 +459,22 @@ class check_nx_beam(check_nx_class):
       },
     }
 
+class check_nx_data(check_nx_class):
+  '''
+  Check the contents of an NXdata
+
+  '''
+
+  def __init__(self):
+    self.items = {
+      "data" : {
+        "minOccurs" : 1,
+        "tests" : [
+          check_dset(dtype=["float32", "float64", "int32", "int64"], dims=3)
+        ]
+      }
+    }
+
 class check_nx_sample(check_nx_class):
   '''
   Check the contents of an NXsample
@@ -558,10 +586,11 @@ class check_nx_mx(check_nx_class):
         "minOccurs" : 0,
         "tests" : []
       },
-      "data" : {
+      "NXdata" : {
+        "class" : True,
         "minOccurs" : 1,
         "tests" : [
-          check_dset(dims=3)
+          check_nx_data()
         ]
       },
       "instrument" : {
