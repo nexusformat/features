@@ -1,7 +1,5 @@
-==============================================================================
-This repository is for the (for the moment) experimental work on features for 
-NeXus file reading, validation and related uses.
-==============================================================================
+*This repository is for the (for the moment) experimental work on features for 
+NeXus file reading, validation and related uses.*
 
 Provided all dependencies are met:
 
