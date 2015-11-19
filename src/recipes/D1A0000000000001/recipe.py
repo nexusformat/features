@@ -97,7 +97,7 @@ class recipe:
             self.failure_comments.append("%s : Signal attribute points to a non-existent dataset (%s)" % (obj.name, signal))
             return
         if "axes" not in attributes:
-            self.failure_comments.append("%s : No axes are specified" % (obj.name))
+            self.failure_comments.append("%s : No 'axes' attribute is present" % (obj.name))
             return
         for axis in obj.attrs['axes']:
             if axis not in datasets + ['.']:
