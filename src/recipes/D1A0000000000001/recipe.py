@@ -26,20 +26,14 @@ class NXDataWrapper:
         # now build a list of the primary axes
         self.primary_axes = []
         self.primary_axes_names = []
-
-        axes = []
-        for part in NXdata.attrs['axes']:
-            axes += part.split(',')
-
-        for axis in axes:
+        for axis in NXdata.attrs['axes']:
             # if the axis is a . then put a none in the list or the real dataset
             if axis in ['.']:
                 self.primary_axes.append(None)
             else:
                 self.primary_axes.append(NXdata[axis])
                 # remove this so we don't add it to the secondary axes
-                if axis in datasets:
-                    datasets.remove(axis)
+                datasets.remove(axis)
             self.primary_axes_names.append(axis)
 
         self.secondary_axes = {}
@@ -105,10 +99,7 @@ class recipe:
         if "axes" not in attributes:
             self.failure_comments.append("%s : No 'axes' attribute is present" % (obj.name))
             return
-        axes = []
-        for part in obj.attrs['axes']:
-            axes += part.split(',')
-        for axis in axes:
+        for axis in obj.attrs['axes']:
             if axis not in datasets + ['.']:
                 self.failure_comments.append("%s : Axis attribute points to a non-existent dataset (%s)" % (obj.name, axis))
                 return
