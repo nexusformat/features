@@ -1,0 +1,56 @@
+#! /bin/sh -e
+#
+
+# check we are a clone or suggest to make us one
+
+# pull from upstream 
+
+git pull git@github.com:nexusformat/features.git idservice || ( echo refresh from upstream git failed >&2 ; exit 1 )
+
+# ask questions:
+# email
+echo enter your email address:
+read EMAIL
+
+# feature title 
+echo enter a title/tag line for the proposed feature (< 80 chars):
+read TITLE
+
+# request to webservice
+curl 
+EMAIL
+TITLE
+
+ID=01
+
+echo The ID assigned was $ID - Congratulations.
+
+# create template
+DIR=src/recipes/$ID
+mkdir -p $DIR
+cd $DIR
+#unpack something
+
+cat << EOF
+
+If all went well you should now be set.
+
+The ID assigned was $ID.
+This is a temporary assignment and needs to be confirmed but clicking 
+the link in the activation email you should have recevied or should 
+recevie soon.
+The assignment may be withdrawn if not confirmed within a reasonable 
+timescale (on the order of months).
+
+Some template code to get you started has been created in $DIR.
+
+Please edit this code and submit a Github pull request against 
+https://github.com/nexusformat/features when done to get your 
+code included.
+There is no firm time limit for submitting a pull request as 
+long as you a still reachable via email.
+
+Have fun.
+EOF
+
+exit 0 

@@ -30,7 +30,7 @@ Features are referenced by a (semi-)random 64 bit uint identifier. To get an ID 
 
 1. clone this repository into your own Github account or organisation.
 2. checkout your clone 
-3. run python newfeature.py which will
+3. run ./newfeature which will
   a. check your clone is up to date 
   b. ask a few questions on the feature you indend to propose
   c. register the proposal with our webservice which will issue a unique ID
