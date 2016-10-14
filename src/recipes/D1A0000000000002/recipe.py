@@ -5,15 +5,26 @@ class NXcitation(object):
         self.endnote = endnote
         self.bibtex = bibtex
 
+    def get_bibtex_ref(self):
+        return self.bibtex.split(',')[0].split('{')[1]
+
     def get_first_author(self):
         parts = self.endnote.split('\n')
         for part in parts:
             if part.startswith("%A"):
                 return part.replace("%A", "").strip()
 
-    def get_description_with_author(self):
-        return "%s (%s)" % (self.description, self.get_first_author())
+    def get_date(self):
+        parts = self.endnote.split('\n')
+        for part in parts:
+            if part.startswith("%D"):
+                return part.replace("%D", "").strip()
 
+    def get_description_with_author(self):
+        return "%s \\ref{%s}(%s, %s)" % (self.description,
+                                       self.get_bibtex_ref(),
+                                       self.get_first_author(),
+                                       self.get_date())
 
 class NXcitation_manager(object):
     def __init__(self):
@@ -23,7 +34,7 @@ class NXcitation_manager(object):
         self.NXcite_list.append(citation)
 
     def get_full_endnote(self):
-        return "\n".join([cite.endnote for cite in self.NXcite_list])
+        return "\n\n".join([cite.endnote for cite in self.NXcite_list])
 
     def get_full_bibtex(self):
         return "\n".join([cite.bibtex for cite in self.NXcite_list])
@@ -31,6 +42,10 @@ class NXcitation_manager(object):
     def get_description_with_citations(self):
         return ".  ".join([cite.get_description_with_author() for cite in self.NXcite_list])
 
+    def __str__(self):
+        return "\nDESCRIPTION\n%s\n\nBIBTEX\n%s\n\nENDNOTE\n%s" % (self.get_description_with_citations(),
+                                   self.get_full_bibtex(),
+                                   self.get_full_endnote())
 
 class NXciteVisitor(object):
 
@@ -69,8 +84,5 @@ class recipe:
     def process(self):
         citation_manager = NXciteVisitor().get_citation_manager(self.file, self.entry)
         if citation_manager is not None:
-            return {"NXcite Text Description" : citation_manager.get_description_with_citations(),
-                    "NXcite endnote" : citation_manager.get_full_endnote(),
-                    "NXcite bibtex" : citation_manager.get_full_bibtex()
-                    }
+            return citation_manager
         raise AssertionError("This file does not contain any NXcite information")
