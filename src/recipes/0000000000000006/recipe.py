@@ -9,7 +9,7 @@ class check_dtype(object):
 
     def __call__(self, dset):
         dtype = dset.dtype
-        if not dtype in self.dtype:
+        if dtype not in self.dtype:
             return False, "%s is type %s, expected %s" % (
                 dset.name, dtype, ', '.join(self.dtype))
         return True, ""
@@ -103,7 +103,7 @@ class check_dset(object):
     def __call__(self, dset):
         for check in self.checks:
             passed, errors = check(dset)
-            if passed == False:
+            if not passed:
                 raise RuntimeError(errors)
 
 
@@ -126,7 +126,7 @@ class check_attr(object):
         self.dtype = dtype
 
     def __call__(self, dset):
-        if not self.name in dset.attrs.keys():
+        if self.name not in dset.attrs.keys():
             raise RuntimeError("'%s' does not have an attribute '%s'" % (
                 dset.name, self.name))
         elif self.value is not None and dset.attrs[self.name] != self.value:

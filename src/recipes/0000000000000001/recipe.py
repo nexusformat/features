@@ -1,10 +1,10 @@
 def check_nframes(context, nxTomo, item, values, fails):
     frames = nxTomo[item].shape[0];
-    if (not 'nFrames' in context.keys()) and frames != 1:
+    if ('nFrames' not in context.keys()) and frames != 1:
         context['nFrames'] = frames
         context['nFrames_item'] = item
     else:
-        if not frames in [context['nFrames'], 1]:
+        if frames not in [context['nFrames'], 1]:
             fails.append("'%s' does not have the same number of frames as '%s'" % (item, context['nFrames_item']))
 
 

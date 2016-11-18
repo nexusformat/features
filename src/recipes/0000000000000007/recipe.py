@@ -1,40 +1,40 @@
 def check_len(context, entry, item, values, fails):
     frames = entry[item].shape[0];
-    if (not 'nFrames' in context.keys()) and frames != 1:
+    if ('nFrames' not in context.keys()) and frames != 1:
         context['nFrames'] = frames
         context['nFrames_item'] = item
     else:
-        if not frames in [context['nFrames'], 1]:
+        if frames not in [context['nFrames'], 1]:
             fails.append("'%s' does not have the same number of frames as '%s'" % (item, context['nFrames_item']))
 
 
 def check_int(context, entry, item, value, fails):
     dtype = entry[item].dtype
-    if not dtype in ["int64"]:
+    if dtype not in ["int64"]:
         fails.append("'%s' is of type %s, expected int32 or int64" % (item, dtype))
 
 
 def check_bool(context, entry, item, value, fails):
     dtype = entry[item].dtype
-    if not dtype in ["bool"]:
+    if dtype not in ["bool"]:
         fails.append("'%s' is of type %s, expected bool" % (item, dtype))
 
 
 def check_uint(context, entry, item, value, fails):
     dtype = entry[item].dtype
-    if not dtype in ["uint64"]:
+    if dtype not in ["uint64"]:
         fails.append("'%s' is of type %s, expected uint64" % (item, dtype))
 
 
 def check_float(context, entry, item, value, fails):
     dtype = entry[item].dtype
-    if not dtype in ["float64"]:
+    if dtype not in ["float64"]:
         fails.append("'%s' is of type %s, expected float64" % (item, dtype))
 
 
 def check_array_uint(context, entry, item, value, fails):
     dtype = entry[item].dtype
-    if not dtype in ["object"]:
+    if dtype not in ["object"]:
         fails.append("'%s' is of type %s, expected object" % (item, dtype))
 
 
