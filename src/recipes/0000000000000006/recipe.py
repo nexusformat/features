@@ -1,8 +1,8 @@
 class check_dtype(object):
-    '''
+    """
     A class to check whether the dataset data type matches the expected
 
-    '''
+    """
 
     def __init__(self, dtype):
         self.dtype = dtype
@@ -16,10 +16,10 @@ class check_dtype(object):
 
 
 class check_dims(object):
-    '''
+    """
     A class to check whether the dataset dimensions matches the expected
 
-    '''
+    """
 
     def __init__(self, dims):
         self.dims = dims
@@ -33,10 +33,10 @@ class check_dims(object):
 
 
 class check_shape(object):
-    '''
+    """
     A class to check whether the dataset shape matches the expected
 
-    '''
+    """
 
     def __init__(self, shape):
         self.shape = shape
@@ -50,10 +50,10 @@ class check_shape(object):
 
 
 class check_is_scalar(object):
-    '''
+    """
     A class to check whether the dataset is scalar or not
 
-    '''
+    """
 
     def __init__(self, is_scalar):
         self.is_scalar = is_scalar
@@ -71,23 +71,23 @@ class check_is_scalar(object):
 
 
 class check_dset(object):
-    '''
+    """
     Check properties of a dataset
 
-    '''
+    """
 
     def __init__(self,
                  dtype=None,
                  dims=None,
                  shape=None,
                  is_scalar=None):
-        '''
+        """
         Set stuff to check
         :param dtype:         The datatype
         :param dims:          The number of dimensions
         :param shape:         The shape of the dataset
 
-        '''
+        """
         self.checks = []
         if dtype is not None:
             if not isinstance(dtype, list) and not isinstance(dtype, tuple):
@@ -108,19 +108,19 @@ class check_dset(object):
 
 
 class check_attr(object):
-    '''
+    """
     Check some properties of an attribute
 
-    '''
+    """
 
     def __init__(self, name, value=None, dtype=None):
-        '''
+        """
         Set stuff to check
         :param name:  The name of the attribute
         :param value: The value of the attribute
         :param tests: A list of tests to run
 
-        '''
+        """
         self.name = name
         self.value = value
         self.dtype = dtype
@@ -140,10 +140,10 @@ class check_attr(object):
 
 
 def find_entries(nx_file, entry):
-    '''
+    """
     Find NXmx entries
 
-    '''
+    """
     hits = []
 
     def visitor(name, obj):
@@ -159,10 +159,10 @@ def find_entries(nx_file, entry):
 
 
 def find_class(nx_file, nx_class):
-    '''
+    """
     Find a given NXclass
 
-    '''
+    """
     hits = []
 
     def visitor(name, obj):
@@ -175,10 +175,10 @@ def find_class(nx_file, nx_class):
 
 
 def convert_units(value, input_units, output_units):
-    '''
+    """
     Hacky utility function to convert units
 
-    '''
+    """
     converters = {
         'm': {
             'mm': lambda x: x * 1e3,
@@ -212,10 +212,10 @@ def convert_units(value, input_units, output_units):
 
 
 def visit_dependancies(nx_file, item, visitor=None):
-    '''
+    """
     Walk the dependency chain and call a visitor function
 
-    '''
+    """
     import os.path
     dependency_chain = []
     if os.path.basename(item) == 'depends_on':
@@ -239,10 +239,10 @@ def visit_dependancies(nx_file, item, visitor=None):
 
 
 def construct_vector(nx_file, item, vector=None):
-    '''
+    """
     Walk the dependency chain and create the absolute vector
 
-    '''
+    """
     from scitbx import matrix
 
     class TransformVisitor(object):
@@ -291,10 +291,10 @@ def construct_vector(nx_file, item, vector=None):
 
 
 def run_checks(handle, items):
-    '''
+    """
     Run checks for datasets
 
-    '''
+    """
     from os.path import join
     for item, detail in items.iteritems():
         min_occurs = detail["minOccurs"]
@@ -314,10 +314,10 @@ def run_checks(handle, items):
 
 
 class NXdetector_module(object):
-    '''
+    """
     A class to hold a handle to NXdetector_module
 
-    '''
+    """
 
     def __init__(self, handle, errors=None):
         self.handle = handle
@@ -374,10 +374,10 @@ class NXdetector_module(object):
 
 
 class NXdetector(object):
-    '''
+    """
     A class to handle a handle to NXdetector
 
-    '''
+    """
 
     def __init__(self, handle, errors=None):
 
@@ -549,10 +549,10 @@ class NXdetector(object):
 
 
 class NXinstrument(object):
-    '''
+    """
     A class to hold a handle to NXinstrument
 
-    '''
+    """
 
     def __init__(self, handle, errors=None):
 
@@ -573,10 +573,10 @@ class NXinstrument(object):
 
 
 class NXbeam(object):
-    '''
+    """
     A class to hold a handle to NXbeam
 
-    '''
+    """
 
     def __init__(self, handle, errors=None):
         self.handle = handle
@@ -610,10 +610,10 @@ class NXbeam(object):
 
 
 class NXsample(object):
-    '''
+    """
     A class to hold a handle to NXsample
 
-    '''
+    """
 
     def __init__(self, handle, errors=None):
 
@@ -681,20 +681,20 @@ class NXsample(object):
 
 
 class NXdata(object):
-    '''
+    """
     A class to hold a handle to NXdata
 
-    '''
+    """
 
     def __init__(self, handle, errors=None):
         self.handle = handle
 
 
 class NXmxEntry(object):
-    '''
+    """
     A class to hold a handle to NXmx entries
 
-    '''
+    """
 
     def __init__(self, handle, errors=None):
 
@@ -754,10 +754,10 @@ class NXmxEntry(object):
 
 
 def validate(nx_file, item, test):
-    '''
+    """
     Validate the NXmx entries
 
-    '''
+    """
     values = []
     fails = []
     context = {}
@@ -768,10 +768,10 @@ def validate(nx_file, item, test):
 
 
 def check_path(nx_file, path):
-    '''
+    """
     Ensure path exists
 
-    '''
+    """
     section = nx_file
     try:
         nx_file[path]
@@ -805,14 +805,14 @@ class recipe:
 
         # Check we've got some stuff
         if len(self.entries) == 0:
-            raise RuntimeError('''
+            raise RuntimeError("""
         Error reading NXmxfile: %s
           No NXmx entries in file
 
         The following errors occurred:
 
         %s
-      ''' % (self.file.filename, "\n".join(self.errors)))
+      """ % (self.file.filename, "\n".join(self.errors)))
 
 
 if __name__ == '__main__':
