@@ -118,7 +118,6 @@ class recipe:
         if len(nxTomoList) == 0:
             raise AssertionError("No NXtomo entries in this entry")
         entries = []
-        failures = []
         for NXtomoEntry in nxTomoList:
             entries.append(validate(NXtomoEntry))
         return entries

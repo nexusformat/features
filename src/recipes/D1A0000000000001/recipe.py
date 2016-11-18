@@ -120,5 +120,4 @@ class recipe:
 
         if len(self.NXdatas) == 0:
             raise AssertionError('No NXdata with cansas Axis found\n' + '\n'.join(self.failure_comments))
-        a = self.NXdatas[0]
         return self.NXdatas
