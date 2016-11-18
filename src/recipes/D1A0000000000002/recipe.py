@@ -22,9 +22,10 @@ class NXcitation(object):
 
     def get_description_with_author(self):
         return "%s \\ref{%s}(%s, %s)" % (self.description,
-                                       self.get_bibtex_ref(),
-                                       self.get_first_author(),
-                                       self.get_date())
+                                         self.get_bibtex_ref(),
+                                         self.get_first_author(),
+                                         self.get_date())
+
 
 class NXcitation_manager(object):
     def __init__(self):
@@ -44,11 +45,11 @@ class NXcitation_manager(object):
 
     def __str__(self):
         return "\nDESCRIPTION\n%s\n\nBIBTEX\n%s\n\nENDNOTE\n%s" % (self.get_description_with_citations(),
-                                   self.get_full_bibtex(),
-                                   self.get_full_endnote())
+                                                                   self.get_full_bibtex(),
+                                                                   self.get_full_endnote())
+
 
 class NXciteVisitor(object):
-
     def __init__(self):
         self.citation_manager = NXcitation_manager()
 
@@ -58,7 +59,7 @@ class NXciteVisitor(object):
                 citation = NXcitation(obj['description'][0],
                                       obj['doi'][0],
                                       obj['endnote'][0],
-                                      obj['bibtex'][0]) 
+                                      obj['bibtex'][0])
                 self.citation_manager.add_citation(citation)
 
     def get_citation_manager(self, nx_file, entry):
@@ -70,7 +71,7 @@ class recipe:
     """
         A demo recipe for finding the information associated with this demo feature.
 
-        This is meant to help consumers of this feature to understand how to implement 
+        This is meant to help consumers of this feature to understand how to implement
         code that understands that feature (copy and paste of the code is allowed).
         It also documents in what preference order (if any) certain things are evaluated
         when finding the information.
