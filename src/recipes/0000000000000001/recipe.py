@@ -1,5 +1,5 @@
 def check_nframes(context, nxTomo, item, values, fails):
-    frames = nxTomo[item].shape[0];
+    frames = nxTomo[item].shape[0]
     if ('nFrames' not in context.keys()) and frames != 1:
         context['nFrames'] = frames
         context['nFrames_item'] = item
@@ -9,7 +9,7 @@ def check_nframes(context, nxTomo, item, values, fails):
 
 
 def include_data(context, nxTomo, item, values, fails):
-    values[item] = nxTomo[item];
+    values[item] = nxTomo[item]
 
 
 def check_image_keys(context, nxTomo, item, values, fails):

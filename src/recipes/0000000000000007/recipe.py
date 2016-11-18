@@ -1,5 +1,5 @@
 def check_len(context, entry, item, values, fails):
-    frames = entry[item].shape[0];
+    frames = entry[item].shape[0]
     if ('nFrames' not in context.keys()) and frames != 1:
         context['nFrames'] = frames
         context['nFrames_item'] = item
