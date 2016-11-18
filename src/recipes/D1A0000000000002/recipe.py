@@ -71,7 +71,7 @@ class recipe:
     """
         A demo recipe for finding the information associated with this demo feature.
 
-        This is meant to help consumers of this feature to understand how to implement 
+        This is meant to help consumers of this feature to understand how to implement
         code that understands that feature (copy and paste of the code is allowed).
         It also documents in what preference order (if any) certain things are evaluated
         when finding the information.

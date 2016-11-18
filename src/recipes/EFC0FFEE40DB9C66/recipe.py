@@ -1,5 +1,3 @@
-#
-
 class recipe:
     """
         A demo recipe for finding the information associated with this demo feature.
