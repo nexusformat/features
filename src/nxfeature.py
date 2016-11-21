@@ -5,9 +5,7 @@ import numpy
 import importlib
 import sys
 import os
-
-# print "%016X" % int("C0FFEEBEEFC0FFEE", 16)
-# feature = "C0FFEEBEEFC0FFEE"
+from IRecipe import IRecipe
 
 RECIPIE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/recipes"
 sys.path.append(RECIPIE_DIR)
@@ -25,7 +23,11 @@ class InsaneEntryWithFeatures:
     def feature_response(self, featureid):
         featuremodule = importlib.import_module("%016X.recipe" % featureid)
         r = featuremodule.recipe(self.nxsfile, self.entrypath)
-        return r.process()
+        if isinstance(r, IRecipe):
+            return r.process()
+        else:
+            raise Exception(
+                "Recipe for feature ID " + str(featureid) + " does not have the correct interface for a recipe")
 
     def feature_title(self, featureid):
         featuremodule = importlib.import_module("%016X.recipe" % featureid)
@@ -33,36 +35,28 @@ class InsaneEntryWithFeatures:
         return r.title
 
 
-class InsaneFeatureDiscoverer:
-    def __init__(self, nxsfile):
+class FeatureDiscoverer:
+    def __init__(self, nxsfile, test_all):
         self.file = h5py.File(nxsfile, 'r')
+        self.test_all = test_all
 
     def entries(self):
         ent = []
+        path = RECIPIE_DIR
         for entry in self.file.keys():
-            path = "/%s/features" % entry
-            try:
+            if self.test_all:
+                features = [int(feature, 16) for feature in os.listdir(RECIPIE_DIR)]
+            else:
+                path = "/%s/features" % entry
                 features = self.file[path]
-                if features.dtype == numpy.dtype("uint64"):
-                    ent.append(InsaneEntryWithFeatures(self.file, entry, features))
-            except:
-                print "no features in " + path
-                pass
-        return ent
+                if features.dtype != numpy.dtype("uint64"):
+                    # Directory name not of correct form to be a feature, ignore and move on to next
+                    continue
 
-
-class AllFeatureDiscoverer:
-    def __init__(self, nxsfile):
-        self.file = h5py.File(nxsfile, 'r')
-
-    def entries(self):
-        ent = []
-        for entry in self.file.keys():
             try:
-                features = [int(feat, 16) for feat in os.listdir(RECIPIE_DIR)]
                 ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
-                print "no recipies in " + RECIPIE_DIR
+                print "no recipes in " + path
                 pass
         return ent
 
@@ -72,15 +66,12 @@ if __name__ == '__main__':
 
     usage = "%prog [options] nxs_file"
     parser = optparse.OptionParser(usage=usage)
-    parser.add_option("-t", "--test", dest="test", help="Test file against all recipies", action="store_true",
+    parser.add_option("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
                       default=False)
 
     (options, args) = parser.parse_args()
 
-    if options.test:
-        disco = AllFeatureDiscoverer(args[0])
-    else:
-        disco = InsaneFeatureDiscoverer(args[0])
+    disco = FeatureDiscoverer(args[0], options.test)
 
     for entry in disco.entries():
         fail_list = []
