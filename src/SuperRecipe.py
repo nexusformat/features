@@ -11,8 +11,8 @@ class SuperRecipe:
     def __init__(self, filedesc, entrypath):
         """
         Recipes should implement this method with a descriptive self.title
-        :param filedesc:
-        :param entrypath:
+        :param filedesc: path of the NeXus file
+        :param entrypath: path of the feature's directory
         """
         self.file = filedesc
         self.entry = entrypath
@@ -21,17 +21,16 @@ class SuperRecipe:
     @abstractmethod
     def process(self):
         """
-        Recipes should implement this method to return ...
-        :return:
+        Recipes should implement this method to return information which is useful to a user
+        :return: results of processing this feature
         """
-        return dict()  # should return dict or list here? Or iterable...
+        pass
 
     @classmethod
     def __subclasshook__(cls, C):
         """
         This method should not be implemented in a recipe
-        :param C:
-        :return:
+        It allows recipes to be considered a subclass of SuperRecipe without them explicitly subclassing it
         """
         if cls is SuperRecipe:
             if "process" in dir(C):
