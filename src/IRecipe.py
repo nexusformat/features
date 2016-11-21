@@ -1,10 +1,10 @@
 from abc import ABCMeta, abstractmethod
 
 
-class SuperRecipe:
+class IRecipe:
     __metaclass__ = ABCMeta
     """
-    Recipes should implement this interface, but do not need to subclass SuperRecipe
+    Recipes should implement this interface, but do not need to subclass IRecipe
     """
 
     @abstractmethod
@@ -30,9 +30,9 @@ class SuperRecipe:
     def __subclasshook__(cls, C):
         """
         This method should not be implemented in a recipe
-        It allows recipes to be considered a subclass of SuperRecipe without them explicitly subclassing it
+        It allows recipes to be considered a subclass of IRecipe without them explicitly subclassing it
         """
-        if cls is SuperRecipe:
+        if cls is IRecipe:
             if "process" in dir(C):
                 return True
         return NotImplemented

@@ -5,7 +5,7 @@ import numpy
 import importlib
 import sys
 import os
-from SuperRecipe import SuperRecipe
+from IRecipe import IRecipe
 
 RECIPIE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/recipes"
 sys.path.append(RECIPIE_DIR)
@@ -23,7 +23,7 @@ class InsaneEntryWithFeatures:
     def feature_response(self, featureid):
         featuremodule = importlib.import_module("%016X.recipe" % featureid)
         r = featuremodule.recipe(self.nxsfile, self.entrypath)
-        if isinstance(r, SuperRecipe):
+        if isinstance(r, IRecipe):
             return r.process()
         else:
             raise Exception(
