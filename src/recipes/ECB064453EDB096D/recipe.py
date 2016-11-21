@@ -42,10 +42,12 @@ def validate(nx_event_data):
     fails = []
 
     for item in VALIDATE.keys():
-        for test in VALIDATE[item]:
-            test(context, nx_event_data, item, values, fails)
-        else:
+        if item not in nx_event_data.keys():
             fails.append("'%s' is missing from the NXevent_data entry" % item)
+        else:
+            for test in VALIDATE[item]:
+                test(context, nx_event_data, item, values, fails)
+
     if len(fails) > 0:
         raise AssertionError('\n'.join(fails))
     return values
