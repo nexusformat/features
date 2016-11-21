@@ -70,7 +70,7 @@ class recipe:
         nx_event_data = _NXevent_dataFinder()
         nx_event_data_list = nx_event_data.get_NXevent_data(self.file, self.entry)
         if len(nx_event_data_list) == 0:
-            raise AssertionError("No NXevent_data entries in this entry")
+            raise AssertionError("No NXevent_data entries found")
         entries = []
         for nx_event_data_entry in nx_event_data_list:
             entries.append(validate(nx_event_data_entry))
