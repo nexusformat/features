@@ -1,10 +1,10 @@
 import numpy as np
 
+
 class NXDataWrapper:
-    
     def __init__(self, NXdata):
         self.name = NXdata.name
-        
+
         # get all the names of the datasets
         datasets = list(NXdata.keys())
 
@@ -21,7 +21,7 @@ class NXDataWrapper:
         # build indices dict
         self.indecies = {}
         for dataset in datasets:
-            self.indecies[dataset] = NXdata.attrs[dataset+"_indices"]
+            self.indecies[dataset] = NXdata.attrs[dataset + "_indices"]
 
         # now build a list of the primary axes
         self.primary_axes = []
@@ -44,7 +44,7 @@ class NXDataWrapper:
         return self.data.shape
 
     def get_axis_slice(self, name, slicelist, dataset):
-        slices = [slice(x,x+1) if type(x) is not slice else x for x in slicelist]
+        slices = [slice(x, x + 1) if type(x) is not slice else x for x in slicelist]
         indecies = self.indecies[name]
         reduced_slice = np.array(slices)[indecies]
         reduced_slice = tuple(reduced_slice)
@@ -70,8 +70,8 @@ class NXDataWrapper:
     def __repr__(self):
         return "%s (%s):: %s (%s)" % (self.name, self.signal, str(self.get_shape()), ','.join(self.primary_axes_names))
 
-class recipe:
 
+class recipe:
     """
     Recipe to describe if a file uses the cansas Axis format
     """
@@ -94,21 +94,24 @@ class recipe:
             return
         signal = obj.attrs['signal'][0]
         if signal not in datasets:
-            self.failure_comments.append("%s : Signal attribute points to a non-existent dataset (%s)" % (obj.name, signal))
+            self.failure_comments.append(
+                "%s : Signal attribute points to a non-existent dataset (%s)" % (obj.name, signal))
             return
         if "axes" not in attributes:
             self.failure_comments.append("%s : No 'axes' attribute is present" % (obj.name))
             return
         for axis in obj.attrs['axes']:
             if axis not in datasets + ['.']:
-                self.failure_comments.append("%s : Axis attribute points to a non-existent dataset (%s)" % (obj.name, axis))
+                self.failure_comments.append(
+                    "%s : Axis attribute points to a non-existent dataset (%s)" % (obj.name, axis))
                 return
         datasets.remove(signal)
         for dataset in datasets:
-            if dataset+"_indices" not in attributes:
-                self.failure_comments.append("%s : Axis dataset has no corresponding _indices attribute (%s)" % (obj.name, dataset))
+            if dataset + "_indices" not in attributes:
+                self.failure_comments.append(
+                    "%s : Axis dataset has no corresponding _indices attribute (%s)" % (obj.name, dataset))
                 return
-        
+
         self.NXdatas.append(NXDataWrapper(obj))
 
     def process(self):
@@ -116,8 +119,5 @@ class recipe:
         self.file[self.entry].visititems(self.visitor)
 
         if len(self.NXdatas) == 0:
-            raise AssertionError('No NXdata with cansas Axis found\n'+'\n'.join(self.failure_comments))
-        a = self.NXdatas[0]
+            raise AssertionError('No NXdata with cansas Axis found\n' + '\n'.join(self.failure_comments))
         return self.NXdatas
-
-
