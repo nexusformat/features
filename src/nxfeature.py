@@ -62,7 +62,7 @@ class AllFeatureDiscoverer:
                 features = [int(feat, 16) for feat in os.listdir(RECIPIE_DIR)]
                 ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
-                print "no recipies in " + RECIPIE_DIR
+                print "no recipes in " + RECIPIE_DIR
                 pass
         return ent
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     usage = "%prog [options] nxs_file"
     parser = optparse.OptionParser(usage=usage)
-    parser.add_option("-t", "--test", dest="test", help="Test file against all recipies", action="store_true",
+    parser.add_option("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
                       default=False)
 
     (options, args) = parser.parse_args()
