@@ -31,7 +31,7 @@ DIR=src/recipes/$ID
 mkdir -p $DIR
 cd $DIR
 touch __init__.py
-sed 's,@TITLE@,$TITLE,' < ../TEMPLATETEMPLATE/recipe.py > recipe.py
+sed -e s,@TITLE@,"$TITLE", -e s,@EMAIL@,"$EMAIL", < ../TEMPLATETEMPLATE/recipe.py > recipe.py
 
 cat << EOF
 
