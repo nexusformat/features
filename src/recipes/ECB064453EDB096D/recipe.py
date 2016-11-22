@@ -1,12 +1,12 @@
 def check_nframes(context, nx_event_data, item, values, fails):
     dataset_length = nx_event_data[item].shape[0]
-    if 'event_time_zero' in context.keys() and nx_event_data['event_time_zero'].shape[0] is not dataset_length:
+    if ('event_time_zero' in nx_event_data.keys()) and (nx_event_data['event_time_zero'].shape[0] != dataset_length):
         fails.append("'%s' should have the same number of entries as '%s'" % (item, context['event_time_zero']))
 
 
 def check_nevents(context, nx_event_data, item, values, fails):
     dataset_length = nx_event_data[item].shape[0]
-    if 'total_counts' in context.keys() and dataset_length is not nx_event_data['total_counts']:
+    if ('total_counts' in nx_event_data.keys()) and (dataset_length != nx_event_data['total_counts'][...][0]):
         fails.append(
             "'%s' should have a number of entries matching the total number of events recorded in 'total_counts'"
             % item)
