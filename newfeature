@@ -1,33 +1,37 @@
 #! /bin/sh -e
-#
 
-# check we are a clone or suggest to make us one
+# check we are a clone or suggest to make us one - finding the toplevel sufficient for now
+cd `git rev-parse --show-toplevel`
 
 # pull from upstream 
-
 git pull git@github.com:nexusformat/features.git idservice || ( echo refresh from upstream git failed >&2 ; exit 1 )
 
 # ask questions:
 # email
-echo enter your email address:
+printf "enter your email address: "
 read EMAIL
 
 # feature title 
-echo enter a title/tag line for the proposed feature (< 80 chars):
+printf "enter a title/tag line for the proposed feature (< 80 chars): "
 read TITLE
 
 # request to webservice
 # encode proposer & title
 # check curl is there
-curl --data "proposer=$EMAIL&title=$TITLE" https://idregistry-nexusformat.rhcloud.com/ids/ | json extract id
+ID=`curl -s --data "proposer=$EMAIL&title=$TITLE" https://idregistry-nexusformat.rhcloud.com/ids/ | python -c "import sys, json; print json.load(sys.stdin)['id']"`
 
-echo The ID assigned was $ID - Congratulations.
+cat << EOF
+
+   The ID assigned was $ID - congratulations!
+
+EOF
 
 # create template
 DIR=src/recipes/$ID
 mkdir -p $DIR
 cd $DIR
-#unpack something <-- TODO
+touch __init__.py
+sed 's,@TITLE@,$TITLE,' < ../TEMPLATETEMPLATE/recipe.py > recipe.py
 
 cat << EOF
 
@@ -38,7 +42,7 @@ This is a temporary assignment and needs to be confirmed by clicking
 the link in the activation email you should have recevied or should 
 recevie soon.
 The ID assignment may be withdrawn if not confirmed within a reasonable 
-timescale (on the order of many months).
+timescale (on the order of months).
 
 Some template code to get you started has been created in $DIR.
 
@@ -46,7 +50,7 @@ Please edit this code and submit a Github pull request against
 https://github.com/nexusformat/features when done to get your 
 code included.
 There is no firm time limit for submitting a pull request as 
-long as you a still reachable via email.
+long as your confirmed email address is still reachable.
 
 Have fun. Thank you for supporting NeXus.
 EOF
