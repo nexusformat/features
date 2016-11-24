@@ -4,7 +4,7 @@
 cd `git rev-parse --show-toplevel`
 
 # pull from upstream 
-git pull git@github.com:nexusformat/features.git idservice || ( echo refresh from upstream git failed >&2 ; exit 1 )
+git pull git@github.com:nexusformat/features.git master || ( echo refresh from upstream git failed >&2 ; exit 1 )
 
 # ask questions:
 # email
