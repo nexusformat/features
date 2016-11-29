@@ -6,9 +6,6 @@ import importlib
 import sys
 import os
 
-# print "%016X" % int("C0FFEEBEEFC0FFEE", 16)
-# feature = "C0FFEEBEEFC0FFEE"
-
 RECIPIE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/recipes"
 sys.path.append(RECIPIE_DIR)
 
