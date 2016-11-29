@@ -1,10 +1,10 @@
-def check_nframes(context, nx_event_data, item, values, fails):
+def check_nframes(context, nx_event_data, item, fails):
     dataset_length = nx_event_data[item].shape[0]
     if ('event_time_zero' in nx_event_data.keys()) and (nx_event_data['event_time_zero'].shape[0] != dataset_length):
         fails.append("'%s' should have the same number of entries as '%s'" % (item, context['event_time_zero']))
 
 
-def check_nevents(context, nx_event_data, item, values, fails):
+def check_nevents(context, nx_event_data, item, fails):
     dataset_length = nx_event_data[item].shape[0]
     if ('total_counts' in nx_event_data.keys()) and (dataset_length != nx_event_data['total_counts'][...][0]):
         fails.append(
@@ -22,6 +22,10 @@ VALIDATE = {
 
 
 class _NXevent_dataFinder(object):
+    """
+    Finds NXevent_data groups in the file
+    """
+
     def __init__(self):
         self.hits = []
 
@@ -37,8 +41,14 @@ class _NXevent_dataFinder(object):
 
 
 def validate(nx_event_data):
+    """
+    Checks that fields which should be present are, and that lengths of datasets
+    are consistent with each other and the total count of events.
+
+    :param nx_event_data: An NXevent_data group which was found in the file
+    """
+
     context = {}
-    values = {}
     fails = []
 
     for item in VALIDATE.keys():
@@ -46,11 +56,10 @@ def validate(nx_event_data):
             fails.append("'%s' is missing from the NXevent_data entry" % item)
         else:
             for test in VALIDATE[item]:
-                test(context, nx_event_data, item, values, fails)
+                test(context, nx_event_data, item, fails)
 
     if len(fails) > 0:
         raise AssertionError('\n'.join(fails))
-    return values
 
 
 class recipe:
