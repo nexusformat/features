@@ -1,3 +1,21 @@
+from datetime import datetime, tzinfo, timedelta
+
+ZERO = timedelta(0)
+
+
+class UTC(tzinfo):
+    """UTC"""
+
+    def utcoffset(self, dt):
+        return ZERO
+
+    def tzname(self, dt):
+        return "UTC"
+
+    def dst(self, dt):
+        return ZERO
+
+
 def check_nframes(context, nx_event_data, item, fails):
     dataset_length = nx_event_data[item].shape[0]
     if ('event_time_zero' in nx_event_data.keys()) and (nx_event_data['event_time_zero'].shape[0] != dataset_length):
@@ -6,10 +24,67 @@ def check_nframes(context, nx_event_data, item, fails):
 
 def check_nevents(context, nx_event_data, item, fails):
     dataset_length = nx_event_data[item].shape[0]
-    if ('total_counts' in nx_event_data.keys()) and (dataset_length != nx_event_data['total_counts'][...][0]):
+    if ('total_counts' in nx_event_data.keys()) and (dataset_length != nx_event_data['total_counts'][...]):
         fails.append(
             "'%s' should have a number of entries matching the total number of events recorded in 'total_counts'"
             % item)
+
+
+def isotime_to_unixtime_in_seconds(isotime):
+    utc_dt = datetime.strptime(isotime, '%Y-%m-%dT%H:%M:%S')
+    # convert UTC datetime to seconds since the Epoch
+    return (utc_dt - datetime(1970, 1, 1)).total_seconds()
+
+
+def convert_to_seconds(event_offset, time_unit):
+    if time_unit in ['seconds', 'second', 's']:
+        return event_offset
+    elif time_unit in ['milliseconds', 'millisecond', 'ms']:
+        return event_offset * 1e-3
+    elif time_unit in ['microseconds', 'microsecond', 'us']:
+        return event_offset * 1e-6
+    elif time_unit in ['nanoseconds', 'nanosecond', 'ns']:
+        return event_offset * 1e-9
+    else:
+        raise ValueError('Unrecognised time unit in event_time_offset')
+
+
+def get_pulse_index_of_event(nx_event_data, nth_event):
+    """
+    Find the pulse index (called "frame" index by some institutions) that the nth_event occurred in
+    :param: nx_event_data
+    :param nth_event
+    :return: pulse index of the nth_event
+    """
+    # Find index of the last element which has event_index lower than the nth_event
+    # this is the index of the pulse (frame) which the nth_event falls in
+    event_index = nx_event_data['event_index'][...]
+    for i, event_index_for_pulse in enumerate(event_index):
+        if event_index_for_pulse > nth_event:
+            return i - 1
+
+
+def get_time_neutron_detected(nx_event_data, nth_event):
+    """
+    Use offset and time units attributes to find the absolute time
+    that neutron with index of event_number to hit the detector
+    :param: nx_event_data
+    :param nth_event
+    :return: Absolute time of neutron event detection in ISO8601 format
+    """
+    if "event_time_offset" in nx_event_data.keys() and nx_event_data['event_time_offset'][...].size > (nth_event + 1):
+        # If the nth_event exists in event_time_offset then show
+        # example of finding the absolute time of that neutron detection
+        pulse_index = get_pulse_index_of_event(nx_event_data, nth_event)
+        pulse_start_time_seconds = convert_to_seconds(nx_event_data['event_time_zero'][pulse_index],
+                                                      nx_event_data['event_time_zero'].attrs['units'])
+        pulse_start_offset = isotime_to_unixtime_in_seconds(nx_event_data['event_time_zero'].attrs['offset'])
+        pulse_absolute_seconds = pulse_start_time_seconds + pulse_start_offset
+        event_offset = nx_event_data['event_time_offset'][nth_event]
+        event_offset_seconds = convert_to_seconds(event_offset, nx_event_data['event_time_offset'].attrs['units'])
+        absolute_event_time_seconds = pulse_absolute_seconds + event_offset_seconds
+        absolute_event_time_iso = datetime.fromtimestamp(absolute_event_time_seconds, tz=UTC()).isoformat()
+        return absolute_event_time_iso
 
 
 VALIDATE = {
@@ -82,5 +157,9 @@ class recipe:
             raise AssertionError("No NXevent_data entries found")
         entries = []
         for nx_event_data_entry in nx_event_data_list:
-            entries.append(validate(nx_event_data_entry))
+            validation_fails = validate(nx_event_data_entry)
+            entries.append(validation_fails)
+            # If validation passes then run examples
+            if not validation_fails:
+                absolute_detection_time = get_time_neutron_detected(nx_event_data_entry, 3)
         return entries
