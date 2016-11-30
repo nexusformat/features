@@ -51,9 +51,9 @@ def convert_to_seconds(event_offset, time_unit):
 
 def get_pulse_index_of_event(nx_event_data, nth_event):
     """
-    Find the pulse index (called "frame" index by some institutions) that the nth_event occurred in
-    :param: nx_event_data
-    :param nth_event
+    Find the pulse index that the nth_event occurred in
+    :param: nx_event_data: An NXevent_data group which was found in the file
+    :param nth_event: The Nth detection event in the group
     :return: pulse index of the nth_event
     """
     # Find index of the last element which has event_index lower than the nth_event
@@ -68,13 +68,11 @@ def get_time_neutron_detected(nx_event_data, nth_event):
     """
     Use offset and time units attributes to find the absolute time
     that neutron with index of event_number to hit the detector
-    :param: nx_event_data
-    :param nth_event
+    :param: nx_event_data: An NXevent_data group which was found in the file
+    :param nth_event: The Nth detection event in the group
     :return: Absolute time of neutron event detection in ISO8601 format
     """
     if "event_time_offset" in nx_event_data.keys() and nx_event_data['event_time_offset'][...].size > (nth_event + 1):
-        # If the nth_event exists in event_time_offset then show
-        # example of finding the absolute time of that neutron detection
         pulse_index = get_pulse_index_of_event(nx_event_data, nth_event)
         pulse_start_time_seconds = convert_to_seconds(nx_event_data['event_time_zero'][pulse_index],
                                                       nx_event_data['event_time_zero'].attrs['units'])
@@ -150,6 +148,9 @@ class recipe:
         self.entry = entrypath
         self.title = "NXevent_data"
 
+    def execute_examples(self, nx_event_data):
+        absolute_detection_time = get_time_neutron_detected(nx_event_data, 3)
+
     def process(self):
         nx_event_data = _NXevent_dataFinder()
         nx_event_data_list = nx_event_data.get_NXevent_data(self.file, self.entry)
@@ -159,7 +160,7 @@ class recipe:
         for nx_event_data_entry in nx_event_data_list:
             validation_fails = validate(nx_event_data_entry)
             entries.append(validation_fails)
-            # If validation passes then run examples
+
             if not validation_fails:
-                absolute_detection_time = get_time_neutron_detected(nx_event_data_entry, 3)
+                self.execute_examples(nx_event_data_entry)
         return entries
