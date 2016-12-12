@@ -119,7 +119,7 @@ def get_last_index_before_larger_than_target(search_dataset, target, start_index
 
 def get_slice_of_events_by_time(nx_event_data, event_index):
     """
-    Get cued slice of events which includes the event index.
+    Get cued slice of events which includes the event index specified.
 
     cue_index and cue_timestamp_zero allow easy efficient access to a slice of event
     data between two timestamps. This slice might, for example, correspond to when a
@@ -128,14 +128,14 @@ def get_slice_of_events_by_time(nx_event_data, event_index):
 
     :param nx_event_data: An NXevent_data group which was found in the file
     :param event_index: event_index which falls inside the range for a cued slice of events
-    :return: tuple of lists of event_index and event_time_offset for events in a cued slice
+    :return: tuple of lists of event_id and event_time_offset for events in a cued slice
     """
     # Find cue entry which falls just before the event_index we are looking for
     cue_i = get_last_index_before_larger_than_target(nx_event_data['cue_index'], event_index)
     # Index range of slice
     start_i = nx_event_data['cue_index'][cue_i]
     end_i = nx_event_data['cue_index'][cue_i+1]
-    return nx_event_data['event_index'][start_i:end_i], nx_event_data['event_time_offsets'][start_i:end_i]
+    return nx_event_data['event_id'][start_i:end_i], nx_event_data['event_time_offset'][start_i:end_i]
 
 
 VALIDATE = {
@@ -205,7 +205,7 @@ class recipe:
     def execute_examples(nx_event_data):
         try:
             absolute_detection_time = get_time_neutron_detected(nx_event_data, 3)
-            event_indices, event_time_offsets = get_slice_of_events_by_time(nx_event_data, 400)
+            event_ids, event_time_offsets = get_slice_of_events_by_time(nx_event_data, 400)
         except Exception:
             # An exception here is not a validation failure so don't pass it upstream
             pass
