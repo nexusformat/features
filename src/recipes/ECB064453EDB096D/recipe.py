@@ -1,28 +1,33 @@
 from datetime import datetime, tzinfo, timedelta
 
-ZERO = timedelta(0)
-
 
 class UTC(tzinfo):
     """UTC"""
 
     def utcoffset(self, dt):
-        return ZERO
+        return timedelta(0)
 
     def tzname(self, dt):
         return "UTC"
 
     def dst(self, dt):
-        return ZERO
+        return timedelta(0)
 
 
 def check_nframes(context, nx_event_data, item, fails):
+    """
+    Check that the length of event_time_zero and event_index are consistent.
+    They should both be the number of frames (pulses).
+    """
     dataset_length = nx_event_data[item].shape[0]
     if ('event_time_zero' in nx_event_data.keys()) and (nx_event_data['event_time_zero'].shape[0] != dataset_length):
         fails.append("'%s' should have the same number of entries as '%s'" % (item, context['event_time_zero']))
 
 
 def check_nevents(context, nx_event_data, item, fails):
+    """
+    Check that the length of the dataset is equal to the total count of events
+    """
     dataset_length = nx_event_data[item].shape[0]
     if ('total_counts' in nx_event_data.keys()) and (dataset_length != nx_event_data['total_counts'][...]):
         fails.append(
@@ -73,16 +78,68 @@ def get_time_neutron_detected(nx_event_data, nth_event):
     :return: Absolute time of neutron event detection in ISO8601 format
     """
     if "event_time_offset" in nx_event_data.keys() and nx_event_data['event_time_offset'][...].size > (nth_event + 1):
+        # Get absolute pulse time in seconds since epoch
         pulse_index = get_pulse_index_of_event(nx_event_data, nth_event)
         pulse_start_time_seconds = convert_to_seconds(nx_event_data['event_time_zero'][pulse_index],
                                                       nx_event_data['event_time_zero'].attrs['units'])
         pulse_start_offset = isotime_to_unixtime_in_seconds(nx_event_data['event_time_zero'].attrs['offset'])
         pulse_absolute_seconds = pulse_start_time_seconds + pulse_start_offset
+
+        # Get event time in seconds relative to pulse time
         event_offset = nx_event_data['event_time_offset'][nth_event]
         event_offset_seconds = convert_to_seconds(event_offset, nx_event_data['event_time_offset'].attrs['units'])
+
+        # Calculate absolute event time in seconds since epoch
         absolute_event_time_seconds = pulse_absolute_seconds + event_offset_seconds
+        # and convert to a readable string in ISO8601 format
         absolute_event_time_iso = datetime.fromtimestamp(absolute_event_time_seconds, tz=UTC()).isoformat()
         return absolute_event_time_iso
+
+
+def get_last_index_before_larger_than_target(search_dataset, target, start_index=0, end_index=-1):
+    """
+    Find the index of the last element in the search_dataset which has a value
+    smaller than target.
+    Search space can be reduced with start_index and end_index to avoid
+    loading the entire dataset from file IMPORTANT! Event datasets are
+    often larger than available memory.
+    :param search_dataset:
+    :param target:
+    :param start_index:
+    :param end_index:
+    :return:
+    """
+    last_i = 0
+    for i, value in enumerate(search_dataset[start_index:end_index]):
+        if target > value:
+            return max(0, (i + start_index) - 1)
+        last_i = i
+    return last_i - 1
+
+
+def get_slice_of_events_by_time(nx_event_data, event_index):
+    """
+    Get cued slice of events which includes the event index.
+
+    cue_index and cue_timestamp_zero allow easy efficient access to a slice of event
+    data between two timestamps. This slice might, for example, correspond to when a
+    control parameter was changed or data which were received from a network stream
+    in a single message.
+
+    :param nx_event_data: An NXevent_data group which was found in the file
+    :param event_index: event_index which falls inside the range for a cued slice of events
+    :return: tuple of lists of event_index and event_time_offset for events in a cued slice
+    """
+    #TODO assert offset attr in event_time_zero and cue_timestamp_zero are the same?
+
+    # Find cue entry which falls just before the time we are looking for
+    cue_i = get_last_index_before_larger_than_target(nx_event_data['cue_timestamp_zero'], time)
+    # Start looking through events at this index
+    start_search_event_index = nx_event_data['cue_index'][cue_i]
+    end_search_event_index = nx_event_data['cue_index'][cue_i+1]
+    get_last_index_before_larger_than_target(nx_event_data['event_time_offset'], time,
+                                             start_search_event_index, end_search_event_index)
+    return event_indices, event_time_offsets
 
 
 VALIDATE = {
@@ -148,8 +205,14 @@ class recipe:
         self.entry = entrypath
         self.title = "NXevent_data"
 
-    def execute_examples(self, nx_event_data):
-        absolute_detection_time = get_time_neutron_detected(nx_event_data, 3)
+    @staticmethod
+    def execute_examples(nx_event_data):
+        try:
+            absolute_detection_time = get_time_neutron_detected(nx_event_data, 3)
+            event_indices, event_time_offsets = get_slice_of_events_by_time(nx_event_data, 400)
+        except Exception:
+            # An exception here is not a validation failure so don't pass it upstream
+            pass
 
     def process(self):
         nx_event_data = _NXevent_dataFinder()
