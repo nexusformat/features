@@ -130,16 +130,12 @@ def get_slice_of_events_by_time(nx_event_data, event_index):
     :param event_index: event_index which falls inside the range for a cued slice of events
     :return: tuple of lists of event_index and event_time_offset for events in a cued slice
     """
-    #TODO assert offset attr in event_time_zero and cue_timestamp_zero are the same?
-
     # Find cue entry which falls just before the event_index we are looking for
     cue_i = get_last_index_before_larger_than_target(nx_event_data['cue_index'], event_index)
-    # Start looking through events at this index
-    start_search_event_index = nx_event_data['cue_index'][cue_i]
-    end_search_event_index = nx_event_data['cue_index'][cue_i+1]
-    get_last_index_before_larger_than_target(nx_event_data['event_time_offset'], time,
-                                             start_search_event_index, end_search_event_index)
-    return event_indices, event_time_offsets
+    # Index range of slice
+    start_i = nx_event_data['cue_index'][cue_i]
+    end_i = nx_event_data['cue_index'][cue_i+1]
+    return nx_event_data['event_index'][start_i:end_i], nx_event_data['event_time_offsets'][start_i:end_i]
 
 
 VALIDATE = {
