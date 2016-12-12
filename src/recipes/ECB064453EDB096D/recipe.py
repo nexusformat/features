@@ -101,13 +101,13 @@ def get_last_index_before_larger_than_target(search_dataset, target, start_index
     Find the index of the last element in the search_dataset which has a value
     smaller than target.
     Search space can be reduced with start_index and end_index to avoid
-    loading the entire dataset from file IMPORTANT! Event datasets are
-    often larger than available memory.
-    :param search_dataset:
-    :param target:
-    :param start_index:
-    :param end_index:
-    :return:
+    loading the entire dataset from file. Event datasets are often larger
+    than available memory.
+    :param search_dataset: dataset to search
+    :param target: target value
+    :param start_index: index to start searching at
+    :param end_index: index to search until
+    :return: last index before the value exceeds the target
     """
     last_i = 0
     for i, value in enumerate(search_dataset[start_index:end_index]):
@@ -132,8 +132,8 @@ def get_slice_of_events_by_time(nx_event_data, event_index):
     """
     #TODO assert offset attr in event_time_zero and cue_timestamp_zero are the same?
 
-    # Find cue entry which falls just before the time we are looking for
-    cue_i = get_last_index_before_larger_than_target(nx_event_data['cue_timestamp_zero'], time)
+    # Find cue entry which falls just before the event_index we are looking for
+    cue_i = get_last_index_before_larger_than_target(nx_event_data['cue_index'], event_index)
     # Start looking through events at this index
     start_search_event_index = nx_event_data['cue_index'][cue_i]
     end_search_event_index = nx_event_data['cue_index'][cue_i+1]
