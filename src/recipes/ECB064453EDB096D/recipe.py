@@ -1,4 +1,5 @@
 from datetime import datetime, tzinfo, timedelta
+import numpy as np
 
 
 class UTC(tzinfo):
@@ -43,7 +44,8 @@ class NXevent_dataExamples:
     def get_pulse_index_of_event(nx_event_data, nth_event):
         """
         Find the pulse index that the nth_event occurred in
-        :param: nx_event_data: An NXevent_data group which was found in the file
+
+        :param: nx_event_data: An NXevent_data HDF5 group in a NeXus file
         :param nth_event: The Nth detection event in the group
         :return: pulse index of the nth_event
         """
@@ -58,7 +60,8 @@ class NXevent_dataExamples:
         """
         Use offset and time units attributes to find the absolute time
         that neutron with index of event_number to hit the detector
-        :param: nx_event_data: An NXevent_data group which was found in the file
+
+        :param: nx_event_data: An NXevent_data HDF5 group in a NeXus file
         :param nth_event: The Nth detection event in the group
         :return: Absolute time of neutron event detection in ISO8601 format
         """
@@ -82,46 +85,39 @@ class NXevent_dataExamples:
             absolute_event_time_iso = datetime.fromtimestamp(absolute_event_time_seconds, tz=UTC()).isoformat()
             return absolute_event_time_iso
 
-    def get_slice_of_events_by_time(self, nx_event_data, event_index):
-        """
-        Get cued slice of events which includes the event index specified.
-
-        cue_index and cue_timestamp_zero allow easy efficient access to a slice of event
-        data between two timestamps. This slice might, for example, correspond to when a
-        control parameter was changed or data which were received from a network stream
-        in a single message.
-
-        :param nx_event_data: An NXevent_data group which was found in the file
-        :param event_index: event_index which falls inside the range for a cued slice of events
-        :return: tuple of lists of event_id and event_time_offset for events in a cued slice
-        """
-        # Find cue entry which falls just before the event_index we are looking for
-        cue_i = self._get_last_index_before_larger_than_target(nx_event_data['cue_index'], event_index)
-        # Index range of slice
-        start_i = nx_event_data['cue_index'][cue_i]
-        end_i = nx_event_data['cue_index'][cue_i + 1]
-        return nx_event_data['event_id'][start_i:end_i], nx_event_data['event_time_offset'][start_i:end_i]
-
     @staticmethod
-    def _get_last_index_before_larger_than_target(search_dataset, target, start_index=0, end_index=-1):
+    def get_events_by_time_range(nx_event_data, range_start, range_end):
         """
-        Find the index of the last element in the search_dataset which has a value
-        smaller than target.
-        Search space can be reduced with start_index and end_index to avoid
-        loading the entire dataset from file. Event datasets are often larger
-        than available memory.
-        :param search_dataset: dataset to search
-        :param target: target value
-        :param start_index: index to start searching at
-        :param end_index: index to search until
-        :return: last index before the value exceeds the target
+        Return arrays of neutron detection timestamps and the corresponding IDs for the detectectors on which they
+        were detected, for a given time range.
+        Note, method uses (the optional) event_time_zero and event_index to achieve this without loading entire
+        event datasets which in general can be too large to fit in memory.
+
+        :param nx_event_data: An NXevent_data HDF5 group in a NeXus file
+        :param range_start: Start time range, collect events occuring after this time
+        :param range_end: End time range, collect events occuring before this time
+        :return:
         """
-        last_i = 0
-        for i, value in enumerate(search_dataset[start_index:end_index]):
-            if target > value:
-                return max(0, (i + start_index) - 1)
-            last_i = i
-        return last_i - 1
+        # event_time_zero is a small subset of timestamps from the full event_time_offsets dataset
+        # Since it is small we can load the whole dataset from file with [...]
+        cue_timestamps = nx_event_data['event_time_zero'][...]
+        # event_index maps between indices in event_time_zero and event_time_offsets
+        cue_indices = nx_event_data['event_index'][...]
+
+        # Look up the positions in the full timestamp list where the cue timestamps are in our range of interest
+        range_indices = cue_indices[np.append((range_start < cue_timestamps[1:]), [True]) &
+                                    np.append([True], (range_end > cue_timestamps[:-1]))][[0, -1]]
+
+        # Now we can extract a slice of the log which we know contains the time range we are interested in
+        times = nx_event_data['event_time_offset'][range_indices[0]:range_indices[1]]
+        detector_ids = nx_event_data['event_id'][range_indices[0]:range_indices[1]]
+
+        # Truncate them to the exact time range asked for
+        times_mask = (range_start <= times) & (times <= range_end)
+        times = times[times_mask]
+        detector_ids = detector_ids[times_mask]
+
+        return times, detector_ids
 
     @staticmethod
     def _isotime_to_unixtime_in_seconds(isotime):
