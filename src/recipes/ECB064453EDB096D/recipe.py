@@ -68,14 +68,14 @@ class NXevent_dataExamples:
     @staticmethod
     def get_events_by_time_range(nx_event_data, range_start, range_end):
         """
-        Return arrays of neutron detection timestamps and the corresponding IDs for the detectectors on which they
+        Return arrays of neutron detection timestamps and the corresponding IDs for the detectors on which they
         were detected, for a given time range.
         Note, method uses (the optional) event_time_zero and event_index to achieve this without loading entire
         event datasets which in general can be too large to fit in memory.
 
         :param nx_event_data: An NXevent_data HDF5 group in a NeXus file
-        :param range_start: Start time range, collect events occuring after this time
-        :param range_end: End time range, collect events occuring before this time
+        :param range_start: Start time range, collect events occurring after this time
+        :param range_end: End time range, collect events occurring before this time
         :return:
         """
         # event_time_zero is a small subset of timestamps from the full event_time_offsets dataset
