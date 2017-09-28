@@ -164,7 +164,7 @@ def _check_datasets_have_same_length(group, dataset_names, fails):
     """
     dataset_lengths = [group[dataset_name].len() for dataset_name in _existant_datasets(group, dataset_names)]
     if len(set(dataset_lengths)) > 1:
-        fails.append(', '.join(dataset_names) + "should have the same length in " + group.name)
+        fails.append(', '.join(dataset_names) + " should have the same length in " + group.name)
 
 
 def _existant_datasets(group, dataset_names):
