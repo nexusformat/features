@@ -1,5 +1,6 @@
 from datetime import datetime, tzinfo, timedelta
 import numpy as np
+from itertools import compress
 
 
 class UTC(tzinfo):
@@ -13,27 +14,6 @@ class UTC(tzinfo):
 
     def dst(self, dt):
         return timedelta(0)
-
-
-def check_nframes(context, nx_event_data, item, fails):
-    """
-    Check that the length of event_time_zero and event_index are consistent.
-    They should both be the number of frames (pulses).
-    """
-    dataset_length = nx_event_data[item].shape[0]
-    if ('event_time_zero' in nx_event_data.keys()) and (nx_event_data['event_time_zero'].shape[0] != dataset_length):
-        fails.append("'%s' should have the same number of entries as '%s'" % (item, context['event_time_zero']))
-
-
-def check_nevents(context, nx_event_data, item, fails):
-    """
-    Check that the length of the dataset is equal to the total count of events
-    """
-    dataset_length = nx_event_data[item].shape[0]
-    if ('total_counts' in nx_event_data.keys()) and (dataset_length != nx_event_data['total_counts'][...]):
-        fails.append(
-            "'%s' should have a number of entries matching the total number of events recorded in 'total_counts'"
-            % item)
 
 
 class NXevent_dataExamples:
@@ -139,15 +119,6 @@ class NXevent_dataExamples:
             raise ValueError('Unrecognised time unit in event_time_offset')
 
 
-VALIDATE = {
-    "total_counts": [],
-    "event_id": [check_nevents],
-    "event_index": [check_nframes],
-    "event_time_offset": [check_nevents],
-    "event_time_zero": []
-}
-
-
 class _NXevent_dataFinder(object):
     """
     Finds NXevent_data groups in the file
@@ -169,24 +140,43 @@ class _NXevent_dataFinder(object):
 
 def validate(nx_event_data):
     """
-    Checks that fields which should be present are, and that lengths of datasets
-    are consistent with each other and the total count of events.
+    Checks that lengths of datasets which should be the same length as each other are.
 
     :param nx_event_data: An NXevent_data group which was found in the file
     """
-
-    context = {}
     fails = []
 
-    for item in VALIDATE.keys():
-        if item not in nx_event_data.keys():
-            fails.append("'%s' is missing from the NXevent_data entry" % item)
-        else:
-            for test in VALIDATE[item]:
-                test(context, nx_event_data, item, fails)
+    _check_datasets_have_same_length(nx_event_data, ['event_time_offset', 'event_id'], fails)
+    _check_datasets_have_same_length(nx_event_data, ['event_time_zero', 'event_index'], fails)
+    _check_datasets_have_same_length(nx_event_data, ['cue_timestamp_zero', 'cue_index'], fails)
 
     if len(fails) > 0:
         raise AssertionError('\n'.join(fails))
+
+
+def _check_datasets_have_same_length(group, dataset_names, fails):
+    """
+    If all named datasets exist in group then check they have the same length
+
+    :param group: HDF group
+    :param dataset_names: Iterable of dataset names
+    :param fails: Failures are recorded in this list
+    """
+    dataset_lengths = [group[dataset_name].len() for dataset_name in _existant_datasets(group, dataset_names)]
+    if len(set(dataset_lengths)) > 1:
+        fails.append(', '.join(dataset_names) + "should have the same length in " + group.name)
+
+
+def _existant_datasets(group, dataset_names):
+    """
+    Reduce dataset list to only those present in the group
+
+    :param group: HDF group containing the datasets
+    :param dataset_names: Iterable of dataset names
+    :return: List containing only the dataset names which exist in the group
+    """
+    existant_dataset_mask = [True if dataset_name in group else False for dataset_name in dataset_names]
+    return list(compress(dataset_names, existant_dataset_mask))
 
 
 class recipe:
