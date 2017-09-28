@@ -65,8 +65,7 @@ class NXevent_dataExamples:
             absolute_event_time_iso = datetime.fromtimestamp(absolute_event_time_seconds, tz=UTC()).isoformat()
             return absolute_event_time_iso
 
-    @staticmethod
-    def get_events_by_time_range(nx_event_data, range_start, range_end):
+    def get_events_by_time_range(self, nx_event_data, range_start, range_end):
         """
         Return arrays of neutron detection timestamps and the corresponding IDs for the detectors on which they
         were detected, for a given time range.
@@ -74,9 +73,9 @@ class NXevent_dataExamples:
         event datasets which in general can be too large to fit in memory.
 
         :param nx_event_data: An NXevent_data HDF5 group in a NeXus file
-        :param range_start: Start time range, collect events occurring after this time
-        :param range_end: End time range, collect events occurring before this time
-        :return:
+        :param range_start: Start time range in seconds measured from the same reference as the pulse times
+        :param range_end: End time range in seconds measured from the same reference as the pulse times
+        :return: Detection event times and detector ids
         """
         # event_time_zero is a small subset of timestamps from the full event_time_offsets dataset
         # Since it is small we can load the whole dataset from file with [...]
@@ -85,19 +84,40 @@ class NXevent_dataExamples:
         cue_indices = nx_event_data['event_index'][...]
 
         # Look up the positions in the full timestamp list where the cue timestamps are in our range of interest
-        range_indices = cue_indices[np.append((range_start < cue_timestamps[1:]), [True]) &
-                                    np.append([True], (range_end > cue_timestamps[:-1]))][[0, -1]]
+        range_indices_all = cue_indices[np.append((range_start < cue_timestamps[1:]), [True]) &
+                                        np.append([True], (range_end > cue_timestamps[:-1]))]
+        range_indices = range_indices_all[[0, -1]]
+        range_timestamps_all = cue_timestamps[np.append((range_start < cue_timestamps[1:]), [True]) &
+                                              np.append([True], (range_end > cue_timestamps[:-1]))]
 
         # Now we can extract a slice of the log which we know contains the time range we are interested in
         times = nx_event_data['event_time_offset'][range_indices[0]:range_indices[1]]
         detector_ids = nx_event_data['event_id'][range_indices[0]:range_indices[1]]
 
-        # Truncate them to the exact time range asked for
-        times_mask = (range_start <= times) & (times <= range_end)
-        times = times[times_mask]
-        detector_ids = detector_ids[times_mask]
+        # Convert everything to seconds
+        event_time_units = nx_event_data['event_time_offset'].attrs.get('units')
+        pulse_time_units = nx_event_data['event_time_zero'].attrs.get('units')
+        times = self._convert_to_seconds(times.astype(np.float64), event_time_units)
+        range_timestamps_all = self._convert_to_seconds(range_timestamps_all.astype(np.float64), pulse_time_units)
 
-        return times, detector_ids
+        # Add the pulse times to the event times to give an "absolute" time for each event
+        new_range_indices = np.array(range_indices_all) - range_indices_all[0]
+        times_list = []
+        for i in range(len(new_range_indices) - 1):
+            times_list.append(times[new_range_indices[i]:new_range_indices[i + 1]] + range_timestamps_all[i])
+
+        # Sort the absolute times (times in each pulse are not sorted) and rearrange the detector id list accordingly
+        absolute_times = np.concatenate(times_list)
+        sort_order = np.argsort(absolute_times)
+        absolute_times = absolute_times[sort_order]
+        detector_ids = detector_ids[sort_order]
+
+        # Truncate them to the exact time range asked for
+        absolute_times_mask = (range_start <= absolute_times) & (absolute_times <= range_end)
+        absolute_times = absolute_times[absolute_times_mask]
+        detector_ids = detector_ids[absolute_times_mask]
+
+        return absolute_times, detector_ids
 
     @staticmethod
     def _isotime_to_unixtime_in_seconds(isotime):
@@ -106,17 +126,33 @@ class NXevent_dataExamples:
         return (utc_dt - datetime(1970, 1, 1)).total_seconds()
 
     @staticmethod
-    def _convert_to_seconds(event_offset, time_unit):
-        if time_unit in ['seconds', 'second', 's']:
-            return event_offset
-        elif time_unit in ['milliseconds', 'millisecond', 'ms']:
-            return event_offset * 1e-3
-        elif time_unit in ['microseconds', 'microsecond', 'us']:
-            return event_offset * 1e-6
-        elif time_unit in ['nanoseconds', 'nanosecond', 'ns']:
-            return event_offset * 1e-9
+    def _convert_to_seconds(timestamps, time_unit):
+        """
+        Convert a single time value or numpy array of times to seconds
+
+        :param timestamps: Time or array to times to convert
+        :param time_unit: Units of the time to convert from
+        :return: Time or times in seconds
+        """
+
+        def _convert_single_timestamp_to_seconds(timestamp):
+            if time_unit in ['seconds', 'second', 's']:
+                return timestamp
+            elif time_unit in ['milliseconds', 'millisecond', 'ms']:
+                return timestamp * 1e-3
+            elif time_unit in ['microseconds', 'microsecond', 'us']:
+                return timestamp * 1e-6
+            elif time_unit in ['nanoseconds', 'nanosecond', 'ns']:
+                return timestamp * 1e-9
+            else:
+                raise ValueError('Unrecognised time unit in event_time_offset')
+
+        if isinstance(timestamps, np.ndarray):
+            vectorised_convert_single_timestamp_to_seconds = np.vectorize(_convert_single_timestamp_to_seconds,
+                                                                          otypes=[np.float64])
+            return vectorised_convert_single_timestamp_to_seconds(timestamps)
         else:
-            raise ValueError('Unrecognised time unit in event_time_offset')
+            return _convert_single_timestamp_to_seconds(timestamps)
 
 
 class _NXevent_dataFinder(object):
