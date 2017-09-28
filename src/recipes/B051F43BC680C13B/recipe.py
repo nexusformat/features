@@ -1,6 +1,11 @@
 from itertools import compress
 
 
+class NXlogExamples:
+    def __init__(self):
+        pass
+
+
 class _NXlogFinder(object):
     """
     Finds NXevent_data groups in the file
@@ -28,8 +33,16 @@ def validate(nx_log):
     """
     fails = []
 
-    _check_datasets_have_same_length(nx_log, ['time', 'value', 'raw_value'], fails)
     _check_datasets_have_same_length(nx_log, ['cue_timestamp_zero', 'cue_index'], fails)
+    if 'time' in nx_log:
+        if 'value' in nx_log:
+            if nx_log['value'].size()[0] != nx_log['time'].size()[0]:
+                fails.append(
+                    'The first dimension of the value dataset should have the same size as the time dataset in ' + nx_log.name)
+        if 'raw_value' in nx_log:
+            if nx_log['raw_value'].size()[0] != nx_log['time'].size()[0]:
+                fails.append(
+                    'The first dimension of the raw_value dataset should have the same size as the time dataset in ' + nx_log.name)
 
     if len(fails) > 0:
         raise AssertionError('\n'.join(fails))
@@ -91,4 +104,4 @@ class recipe:
         for nx_log_entry in nx_log_list:
             validate(nx_log_entry)
 
-        return ""
+        return NXlogExamples
