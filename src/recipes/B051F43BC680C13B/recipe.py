@@ -1,14 +1,44 @@
 from itertools import compress
+import numpy as np
 
 
 class NXlogExamples:
     def __init__(self):
         pass
 
+    def get_times_and_values_in_time_range(self, nxlog_group, start_time, end_time):
+        """
+        Demonstrates use of "cue" datasets to avoid reading the entire log when
+        only a small time slice is required.
+
+        :param nxlog_group: The NXlog HDF5 group
+        :param start_time: Start time of range of interest
+        :param end_time: End time of range of interest
+        :return: Times in requested range and their corresponding values
+        """
+        cue_timestamps = nxlog_group['cue_timestamp_zero'][...]
+        # cue_index maps between indices in the cue timestamps and the full timestamps dataset
+        cue_indices = nxlog_group['cue_index'][...]
+
+        # Look up the positions in the full timestamp list where the cue timestamps are in our range of interest
+        range_indices = cue_indices[np.append((start_time < cue_timestamps[1:]), [True]) &
+                                    np.append([True], (end_time > cue_timestamps[:-1]))][[0, -1]]
+
+        # Extract a slice of the log which we know contains the time range we are interested in
+        times = nxlog_group['time'][range_indices[0]:range_indices[1]]
+        values = nxlog_group['value'][range_indices[0]:range_indices[1]]
+
+        # Truncate them to the exact range
+        times_mask = (start_time <= times) & (times <= end_time)
+        times = times[times_mask]
+        values = values[times_mask]
+
+        return times, values
+
 
 class _NXlogFinder(object):
     """
-    Finds NXevent_data groups in the file
+    Finds NXlog groups in the file
     """
 
     def __init__(self):
