@@ -29,7 +29,7 @@ def validate(nx_log):
     """
     Checks that lengths of datasets which should be the same length as each other are.
 
-    :param nx_event_data: An NXevent_data group which was found in the file
+    :param nx_log: An NXlog group which was found in the file
     """
     fails = []
 
@@ -38,11 +38,13 @@ def validate(nx_log):
         if 'value' in nx_log:
             if nx_log['value'].size()[0] != nx_log['time'].size()[0]:
                 fails.append(
-                    'The first dimension of the value dataset should have the same size as the time dataset in ' + nx_log.name)
+                    'The first dimension of the value dataset should have the '
+                    'same size as the time dataset in ' + nx_log.name)
         if 'raw_value' in nx_log:
             if nx_log['raw_value'].size()[0] != nx_log['time'].size()[0]:
                 fails.append(
-                    'The first dimension of the raw_value dataset should have the same size as the time dataset in ' + nx_log.name)
+                    'The first dimension of the raw_value dataset should have the '
+                    'same size as the time dataset in ' + nx_log.name)
 
     if len(fails) > 0:
         raise AssertionError('\n'.join(fails))
@@ -56,12 +58,12 @@ def _check_datasets_have_same_length(group, dataset_names, fails):
     :param dataset_names: Iterable of dataset names
     :param fails: Failures are recorded in this list
     """
-    dataset_lengths = [group[dataset_name].len() for dataset_name in _existant_datasets(group, dataset_names)]
+    dataset_lengths = [group[dataset_name].len() for dataset_name in _existent_datasets(group, dataset_names)]
     if len(set(dataset_lengths)) > 1:
         fails.append(', '.join(dataset_names) + " should have the same length in " + group.name)
 
 
-def _existant_datasets(group, dataset_names):
+def _existent_datasets(group, dataset_names):
     """
     Reduce dataset list to only those present in the group
 
