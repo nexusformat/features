@@ -131,11 +131,12 @@ if __name__ == '__main__':
                 try:
                     print("\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
                     print("\t\t" + message.replace('\n', '\n\t\t'))
-                except:
-                    error_list.append(feat)
+                except :
+                    e = sys.exc_info()[0]
+                    error_list.append((feat, str(e)))
 
         if len(error_list) > 0:
             print("\nThe following features had unexpected errors (Are you running windows?):")
-            for feat in error_list:
-                print("  (%d)" % (feat))
+            for error in error_list:
+                print("  (%d)  %s" % error)
         print("\n")
