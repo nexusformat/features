@@ -59,7 +59,12 @@ class AllFeatureDiscoverer:
         ent = []
         for entry in self.file.keys():
             try:
-                features = [int(feat, 16) for feat in os.listdir(RECIPIE_DIR)]
+                features = []
+                for feat in os.listdir(RECIPIE_DIR):
+                    try:
+                        features.append(int(feat, 16))
+                    except:
+                        print("Could not parse feature with name %s" % (feat))
                 ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
                 print "no recipes in " + RECIPIE_DIR
@@ -74,6 +79,8 @@ if __name__ == '__main__':
     parser = optparse.OptionParser(usage=usage)
     parser.add_option("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
                       default=False)
+    parser.add_option("-f", "--feature", dest="feature", help="Test file against a defined feature",
+                      default=None)
 
     (options, args) = parser.parse_args()
 
