@@ -71,6 +71,21 @@ class AllFeatureDiscoverer:
                 pass
         return ent
 
+class SingleFeatureDiscoverer:
+    def __init__(self, nxsfile, feature):
+        self.file = h5py.File(nxsfile, 'r')
+        self.feature = feature
+
+    def entries(self):
+        ent = []
+        for entry in self.file.keys():
+            try:
+                ent.append(InsaneEntryWithFeatures(self.file, entry, [self.feature]))
+            except:
+                print("Issues with parsing feature %i"% self.feature)
+                pass
+        return ent
+
 
 if __name__ == '__main__':
     import optparse
@@ -84,10 +99,17 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    if options.test:
-        disco = AllFeatureDiscoverer(args[0])
+    if options.feature is not None:
+        try:
+            disco = SingleFeatureDiscoverer(args[0], int(options.feature, 16))
+        except:
+            print("The feature '%s' has not parsed correctly, exiting" %(options.feature))
+            sys.exit()
     else:
-        disco = InsaneFeatureDiscoverer(args[0])
+        if options.test:
+            disco = AllFeatureDiscoverer(args[0])
+        else:
+            disco = InsaneFeatureDiscoverer(args[0])
 
     for entry in disco.entries():
         fail_list = []
