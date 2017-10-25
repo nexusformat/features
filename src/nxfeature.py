@@ -68,19 +68,19 @@ class AllFeatureDiscoverer:
 
 
 if __name__ == '__main__':
-    import optparse
+    import argparse
 
-    usage = "%prog [options] nxs_file"
-    parser = optparse.OptionParser(usage=usage)
-    parser.add_option("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
-                      default=False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
+                        default=False)
+    parser.add_argument("nexusfile", help="Nexus file to test")
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    if options.test:
-        disco = AllFeatureDiscoverer(args[0])
+    if args.test:
+        disco = AllFeatureDiscoverer(args.test)
     else:
-        disco = InsaneFeatureDiscoverer(args[0])
+        disco = InsaneFeatureDiscoverer(args.nexusfile)
 
     for entry in disco.entries():
         fail_list = []
