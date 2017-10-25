@@ -52,7 +52,7 @@ class NXcitation_manager(object):
                                                                    self.get_full_endnote())
 
     def __str__(self):
-        return "This file has %i citaions" % (self.get_number_of_citations())
+        return "This file has %i citations" % (self.get_number_of_citations())
 
 
 class NXciteVisitor(object):
