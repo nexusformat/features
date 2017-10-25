@@ -119,5 +119,5 @@ class recipe:
         self.file[self.entry].visititems(self.visitor)
 
         if len(self.NXdatas) == 0:
-            raise AssertionError('No NXdata with cansas Axis found\n' + '\n'.join(self.failure_comments))
+            raise AssertionError('No NXdata with cansas Axis found' + '\n'.join(self.failure_comments))
         return self.NXdatas
