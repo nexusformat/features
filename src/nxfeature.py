@@ -68,6 +68,7 @@ class AllFeatureDiscoverer:
                 pass
         return ent
 
+
 class SingleFeatureDiscoverer:
     def __init__(self, nxsfile, feature):
         self.file = h5py.File(nxsfile, 'r')
@@ -79,7 +80,7 @@ class SingleFeatureDiscoverer:
             try:
                 ent.append(InsaneEntryWithFeatures(self.file, entry, [self.feature]))
             except:
-                print("Issues with parsing feature %i"% self.feature)
+                print("Issues with parsing feature %i" % self.feature)
                 pass
         return ent
 
@@ -92,8 +93,9 @@ if __name__ == '__main__':
     parser.add_argument("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
                         default=False)
     parser.add_argument("-f", "--feature", dest="feature", help="Test file against a defined feature",
-                      default=None)
-    parser.add_argument("-v", "--verbose", dest="verbose", help="Include full stacktraces of failues", action="store_true",
+                        default=None)
+    parser.add_argument("-v", "--verbose", dest="verbose", help="Include full stacktraces of failues",
+                        action="store_true",
                         default=False)
     parser.add_argument("nexusfile", help="Nexus file to test")
 
@@ -103,13 +105,13 @@ if __name__ == '__main__':
         try:
             disco = SingleFeatureDiscoverer(args.nexusfile, int(args.feature, 16))
         except:
-            print("The feature '%s' has not parsed correctly, exiting" %(args.feature))
+            print("The feature '%s' has not parsed correctly, exiting" % args.feature)
             sys.exit()
     else:
-      if args.test:
-          disco = AllFeatureDiscoverer(args.nexusfile)
-      else:
-          disco = InsaneFeatureDiscoverer(args.nexusfile)
+        if args.test:
+            disco = AllFeatureDiscoverer(args.nexusfile)
+        else:
+            disco = InsaneFeatureDiscoverer(args.nexusfile)
 
     for entry in disco.entries():
         fail_list = []
@@ -139,5 +141,5 @@ if __name__ == '__main__':
                     if args.verbose:
                         print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
                 except:
-                    print("\t\tFeature (%d) could not be found" % (feat))
+                    print("\t\tFeature (%d) could not be found" % feat)
         print("\n")

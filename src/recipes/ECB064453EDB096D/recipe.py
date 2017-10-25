@@ -17,47 +17,45 @@ class UTC(tzinfo):
 
 
 class NXevent_dataExamples:
-    def __init__(self):
-        pass
+    def __init__(self, nx_event_data):
+        self.nx_event_data = nx_event_data
 
-    @staticmethod
-    def get_pulse_index_of_event(nx_event_data, nth_event):
+    def get_pulse_index_of_event(self, nth_event):
         """
         Find the pulse index that the nth_event occurred in
 
-        :param: nx_event_data: An NXevent_data HDF5 group in a NeXus file
         :param nth_event: The Nth detection event in the group
         :return: pulse index of the nth_event
         """
         # Find index of the last element which has event_index lower than the nth_event
         # this is the index of the pulse (frame) which the nth_event falls in
-        event_index = nx_event_data['event_index'][...]
+        event_index = self.nx_event_data['event_index'][...]
         for i, event_index_for_pulse in enumerate(event_index):
             if event_index_for_pulse > nth_event:
                 return i - 1
 
-    def get_time_neutron_detected(self, nx_event_data, nth_event):
+    def get_time_neutron_detected(self, nth_event):
         """
         Use offset and time units attributes to find the absolute time
         that neutron with index of event_number to hit the detector
 
-        :param: nx_event_data: An NXevent_data HDF5 group in a NeXus file
         :param nth_event: The Nth detection event in the group
         :return: Absolute time of neutron event detection in ISO8601 format
         """
-        if "event_time_offset" in nx_event_data.keys() and nx_event_data['event_time_offset'][...].size > (
+        if "event_time_offset" in self.nx_event_data.keys() and self.nx_event_data['event_time_offset'][...].size > (
                     nth_event + 1):
             # Get absolute pulse time in seconds since epoch
-            pulse_index = self.get_pulse_index_of_event(nx_event_data, nth_event)
-            pulse_start_time_seconds = self._convert_to_seconds(nx_event_data['event_time_zero'][pulse_index],
-                                                                nx_event_data['event_time_zero'].attrs['units'])
-            pulse_start_offset = self._isotime_to_unixtime_in_seconds(nx_event_data['event_time_zero'].attrs['offset'])
+            pulse_index = self.get_pulse_index_of_event(nth_event)
+            pulse_start_time_seconds = self._convert_to_seconds(self.nx_event_data['event_time_zero'][pulse_index],
+                                                                self.nx_event_data['event_time_zero'].attrs['units'])
+            pulse_start_offset = self._isotime_to_unixtime_in_seconds(
+                self.nx_event_data['event_time_zero'].attrs['offset'])
             pulse_absolute_seconds = pulse_start_time_seconds + pulse_start_offset
 
             # Get event time in seconds relative to pulse time
-            event_offset = nx_event_data['event_time_offset'][nth_event]
+            event_offset = self.nx_event_data['event_time_offset'][nth_event]
             event_offset_seconds = self._convert_to_seconds(event_offset,
-                                                            nx_event_data['event_time_offset'].attrs['units'])
+                                                            self.nx_event_data['event_time_offset'].attrs['units'])
 
             # Calculate absolute event time in seconds since epoch
             absolute_event_time_seconds = pulse_absolute_seconds + event_offset_seconds
@@ -65,23 +63,22 @@ class NXevent_dataExamples:
             absolute_event_time_iso = datetime.fromtimestamp(absolute_event_time_seconds, tz=UTC()).isoformat()
             return absolute_event_time_iso
 
-    def get_events_by_time_range(self, nx_event_data, range_start, range_end):
+    def get_events_by_time_range(self, range_start, range_end):
         """
         Return arrays of neutron detection timestamps and the corresponding IDs for the detectors on which they
         were detected, for a given time range.
         Note, method uses (the optional) event_time_zero and event_index to achieve this without loading entire
         event datasets which in general can be too large to fit in memory.
 
-        :param nx_event_data: An NXevent_data HDF5 group in a NeXus file
         :param range_start: Start time range in seconds measured from the same reference as the pulse times
         :param range_end: End time range in seconds measured from the same reference as the pulse times
         :return: Detection event times and detector ids
         """
         # event_time_zero is a small subset of timestamps from the full event_time_offsets dataset
         # Since it is small we can load the whole dataset from file with [...]
-        cue_timestamps = nx_event_data['event_time_zero'][...]
+        cue_timestamps = self.nx_event_data['event_time_zero'][...]
         # event_index maps between indices in event_time_zero and event_time_offsets
-        cue_indices = nx_event_data['event_index'][...]
+        cue_indices = self.nx_event_data['event_index'][...]
 
         # Look up the positions in the full timestamp list where the cue timestamps are in our range of interest
         range_indices_all = cue_indices[np.append((range_start < cue_timestamps[1:]), [True]) &
@@ -91,12 +88,12 @@ class NXevent_dataExamples:
                                               np.append([True], (range_end > cue_timestamps[:-1]))]
 
         # Now we can extract a slice of the log which we know contains the time range we are interested in
-        times = nx_event_data['event_time_offset'][range_indices[0]:range_indices[1]]
-        detector_ids = nx_event_data['event_id'][range_indices[0]:range_indices[1]]
+        times = self.nx_event_data['event_time_offset'][range_indices[0]:range_indices[1]]
+        detector_ids = self.nx_event_data['event_id'][range_indices[0]:range_indices[1]]
 
         # Convert everything to seconds
-        event_time_units = nx_event_data['event_time_offset'].attrs.get('units')
-        pulse_time_units = nx_event_data['event_time_zero'].attrs.get('units')
+        event_time_units = self.nx_event_data['event_time_offset'].attrs.get('units')
+        pulse_time_units = self.nx_event_data['event_time_zero'].attrs.get('units')
         times = self._convert_to_seconds(times.astype(np.float64), event_time_units)
         range_timestamps_all = self._convert_to_seconds(range_timestamps_all.astype(np.float64), pulse_time_units)
 
@@ -154,6 +151,11 @@ class NXevent_dataExamples:
         else:
             return _convert_single_timestamp_to_seconds(timestamps)
 
+    def __str__(self):
+        return "Valid NXevent_data group found at " + self.nx_event_data.name
+
+    __repr__ = __str__
+
 
 class _NXevent_dataFinder(object):
     """
@@ -165,7 +167,7 @@ class _NXevent_dataFinder(object):
 
     def _visit_NXevent_data(self, name, obj):
         if "NX_class" in obj.attrs.keys():
-            if "NXevent_data" in obj.attrs["NX_class"]:
+            if "NXevent_data" == str(obj.attrs["NX_class"], 'utf8'):
                 self.hits.append(obj)
 
     def get_NXevent_data(self, nx_file, entry):
@@ -233,7 +235,9 @@ class recipe:
         nx_event_data_list = nx_event_data.get_NXevent_data(self.file, self.entry)
         if len(nx_event_data_list) == 0:
             raise AssertionError("No NXevent_data entries found")
+        examples = []
         for nx_event_data_entry in nx_event_data_list:
             validate(nx_event_data_entry)
+            examples.append(NXevent_dataExamples(nx_event_data_entry))
 
-        return NXevent_dataExamples
+        return examples
