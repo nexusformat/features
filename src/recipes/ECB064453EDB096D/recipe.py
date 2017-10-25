@@ -152,7 +152,8 @@ class NXevent_dataExamples:
             return _convert_single_timestamp_to_seconds(timestamps)
 
     def __str__(self):
-        return "Valid NXevent_data group found at " + self.nx_event_data.name
+        return "Valid NXevent_data group at " + self.nx_event_data.name + \
+               " containing " + str(self.nx_event_data['event_id'].len()) + " events"
 
     __repr__ = __str__
 
