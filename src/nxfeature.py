@@ -183,3 +183,6 @@ if __name__ == '__main__':
         print("\n")
     if args.xml:
         factory.write(args.xml)
+
+    # to fail on Travis, return non zero if fails
+    sys.exit(len(fail_list))
