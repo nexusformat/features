@@ -64,7 +64,7 @@ class _NXTomoFinder(object):
         if "NX_class" in obj.attrs.keys():
             if str(obj.attrs["NX_class"], 'utf8') in ["NXentry", "NXsubentry"]:
                 if "definition" in obj.keys():
-                    if str(obj["definition"][0], 'utf8') == "NXtomo":
+                    if str(obj["definition"][0], 'utf8') == "NXtomo":b
                         self.hits.append(obj)
 
     def get_NXtomo(self, nx_file, entry):
