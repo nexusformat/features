@@ -48,10 +48,13 @@ class recipe:
     """
 
     def find_plotable_data(self):
+        global plotlist
         plotlist = []
+        global linklist
         linklist = []
         self.file[self.entry].visititems(visit_nxdata)
-        return self.file[self.entry].visititems(visit_dataset)
+        self.file[self.entry].visititems(visit_dataset)
+        return
 
     def __init__(self, filedesc, entrypath):
         self.file = filedesc
