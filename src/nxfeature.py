@@ -152,7 +152,6 @@ if __name__ == '__main__':
     for entry in disco.entries():
         pass_list = []
         fail_list = []
-        error_list = []
 
         print("Entry \"%s\" appears to contain the following features (they validate correctly): " % entry.entrypath)
         for feat in entry.features():
@@ -161,9 +160,9 @@ if __name__ == '__main__':
                 pass_list.append((feat, response))
                 print("\t%s (%d) %s" % (entry.feature_title(feat), feat, response))
             except AssertionError as ae:
-                fail_list.append((feat, str(ae)))
+                fail_list.append((feat, type(ae).__name__, str(ae), None))
             except Exception as e:
-                error_list.append((feat, str(traceback.format_exc())))
+                fail_list.append((feat, type(e).__name__, str(e), str(traceback.format_exc())))
 
         output = str()
         for feat, message in pass_list:
@@ -171,20 +170,16 @@ if __name__ == '__main__':
 
         if len(fail_list) > 0:
             print("\n\tThe following features failed to validate:")
-            for feat, message in fail_list:
-                print("\t\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
-                print("\t\t\t" + message.replace('\n', '\n\t\t'))
-                factory.add_test_case(entry.feature_title(feat), feat, "AssertionError", message)
-
-        if len(error_list) > 0:
-            print("\n\tThe following features had unexpected errors (Are you running windows?):") #build error
-            for feat, message in error_list:
+            for feat, error_type, message, stack in fail_list:
                 try:
-                    print("\t\t%s (%d) had an unexpected error" % (entry.feature_title(feat), feat))
-                    if args.verbose:
-                        print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
+                    print("\t\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
+                    print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
+                    if args.verbose and stack:
+                        print("\t\t\t" + stack.replace('\n', '\n\t\t\t'))
+                    factory.add_test_case(entry.feature_title(feat), feat, error_type, message)
                 except:
-                    print("\t\tFeature (%d) could not be found" % feat)
+                    if args.verbose:
+                        print("\t\tFeature (%d) could not be found" % feat)
         print("\n")
     if args.xml:
         factory.write(args.xml)
