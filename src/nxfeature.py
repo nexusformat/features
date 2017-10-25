@@ -46,7 +46,7 @@ class InsaneFeatureDiscoverer:
                 if features.dtype == numpy.dtype("uint64"):
                     ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
-                print "no features in " + path
+                print("no features in " + path)
                 pass
         return ent
 
@@ -62,7 +62,7 @@ class AllFeatureDiscoverer:
                 features = [int(feat, 16) for feat in os.listdir(RECIPIE_DIR)]
                 ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
-                print "no recipes in " + RECIPIE_DIR
+                print("no recipes in " + RECIPIE_DIR)
                 pass
         return ent
 
@@ -92,9 +92,9 @@ if __name__ == '__main__':
                 response = entry.feature_response(feat)
                 print("\t%s (%d) %s" % (entry.feature_title(feat), feat, response))
             except AssertionError as ae:
-                fail_list.append((feat, ae.message))
+                fail_list.append((feat, ae))
             except Exception as e:
-                fail_list.append((feat, "Undefined validation error:(%s)" % e.message))
+                fail_list.append((feat, "Undefined validation error:(%s)" % e))
 
         if len(fail_list) > 0:
             print("\nThe following features failed to validate:")
@@ -108,5 +108,5 @@ if __name__ == '__main__':
         if len(error_list) > 0:
             print("\nThe following features had unexpected errors (Are you running windows?):")
             for feat in error_list:
-                print("  (%d)" % (feat))
+                print("  (%d)" % feat)
         print("\n")
