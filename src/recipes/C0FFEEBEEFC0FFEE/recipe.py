@@ -17,7 +17,7 @@ class recipe:
         for node in self.file[self.entry].keys():
             try:
                 absnode = "%s/%s" % (self.entry, node)
-                if self.file[absnode].attrs["NX_class"] == "NXsample":
+                if str(self.file[absnode].attrs["NX_class"], 'utf8') == "NXsample":
                     return absnode
             except:
                 pass
@@ -28,15 +28,13 @@ class recipe:
         dependency_chain = []
         try:
             sample = self.findNXsample()
-            # this may need more attention for reading all possible types of string
-            depends_on = self.file[sample + "/depends_on"][0]
+            depends_on = str(self.file[sample + "/depends_on"][0], 'utf8')
             while not depends_on == ".":
                 dependency_chain.append(depends_on)
-                # this may need more attention for reading all possible types of string
-                depends_on = self.file[depends_on].attrs["depends_on"]
+                depends_on = str(self.file[depends_on].attrs["depends_on"], 'utf8')
 
         except Exception as e:
-            raise Exception("this feature does not validate correctly: " + e)
+            raise Exception("this feature does not validate correctly")
 
         # better have custom exceptions
         return {"dependency_chain": dependency_chain}

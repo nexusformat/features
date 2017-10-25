@@ -62,9 +62,9 @@ class _NXTomoFinder(object):
 
     def _visit_NXtomo(self, name, obj):
         if "NX_class" in obj.attrs.keys():
-            if obj.attrs["NX_class"] in ["NXentry", "NXsubentry"]:
+            if str(obj.attrs["NX_class"], 'utf8') in ["NXentry", "NXsubentry"]:
                 if "definition" in obj.keys():
-                    if obj["definition"][0] == "NXtomo":
+                    if str(obj["definition"][0], 'utf8') == "NXtomo":
                         self.hits.append(obj)
 
     def get_NXtomo(self, nx_file, entry):
@@ -93,7 +93,7 @@ def validate(nxTomo):
             for test in VALIDATE[item]:
                 test(context, nxTomo, item, values, fails)
         else:
-            fails.append("'NXtomo/%s' is missing from the NXtomo entry" % (item))
+            fails.append("'NXtomo/%s' is missing from the NXtomo entry" % item)
     if len(fails) > 0:
         raise AssertionError('\n'.join(fails))
     return values

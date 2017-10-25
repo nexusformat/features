@@ -46,7 +46,7 @@ class InsaneFeatureDiscoverer:
                 if features.dtype == numpy.dtype("uint64"):
                     ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
-                print "no features in " + path
+                print("no features in " + path)
                 pass
         return ent
 
@@ -67,7 +67,7 @@ class AllFeatureDiscoverer:
                         print("Could not parse feature with name %s" % (feat))
                 ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
-                print "no recipes in " + RECIPIE_DIR
+                print("no recipes in " + RECIPIE_DIR)
                 pass
         return ent
 
@@ -124,15 +124,15 @@ if __name__ == '__main__':
                 response = entry.feature_response(feat)
                 print("\t%s (%d) %s" % (entry.feature_title(feat), feat, response))
             except AssertionError as ae:
-                fail_list.append((feat, ae.message))
+                fail_list.append((feat, str(ae)))
             except Exception as e:
-                error_list.append((feat, traceback.format_exc()))
+                error_list.append((feat, str(traceback.format_exc())))
 
         if len(fail_list) > 0:
             print("\n\tThe following features failed to validate:")
             for feat, message in fail_list:
-                    print("\t\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
-                    print("\t\t\t" + message.replace('\n', '\n\t\t'))
+                print("\t\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
+                print("\t\t\t" + message.replace('\n', '\n\t\t'))
 
         if len(error_list) > 0:
             print("\n\tThe following features had unexpected errors (Are you running windows?):")
