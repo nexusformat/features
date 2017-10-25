@@ -88,28 +88,28 @@ class SingleFeatureDiscoverer:
 
 
 if __name__ == '__main__':
-    import optparse
+    import argparse
 
-    usage = "%prog [options] nxs_file"
-    parser = optparse.OptionParser(usage=usage)
-    parser.add_option("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
-                      default=False)
-    parser.add_option("-f", "--feature", dest="feature", help="Test file against a defined feature",
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
+                        default=False)
+    parser.add_argument("-f", "--feature", dest="feature", help="Test file against a defined feature",
                       default=None)
+    parser.add_argument("nexusfile", help="Nexus file to test")
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    if options.feature is not None:
+    if args.feature:
         try:
-            disco = SingleFeatureDiscoverer(args[0], int(options.feature, 16))
+            disco = SingleFeatureDiscoverer(args.nexusfile, int(args.feature, 16))
         except:
-            print("The feature '%s' has not parsed correctly, exiting" %(options.feature))
+            print("The feature '%s' has not parsed correctly, exiting" %(args.feature))
             sys.exit()
     else:
-        if options.test:
-            disco = AllFeatureDiscoverer(args[0])
-        else:
-            disco = InsaneFeatureDiscoverer(args[0])
+      if args.test:
+          disco = AllFeatureDiscoverer(args.nexusfile)
+      else:
+          disco = InsaneFeatureDiscoverer(args.nexusfile)
 
     for entry in disco.entries():
         fail_list = []
