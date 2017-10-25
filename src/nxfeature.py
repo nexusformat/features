@@ -59,28 +59,57 @@ class AllFeatureDiscoverer:
         ent = []
         for entry in self.file.keys():
             try:
-                features = [int(feat, 16) for feat in os.listdir(RECIPIE_DIR)]
+                features = []
+                for feat in os.listdir(RECIPIE_DIR):
+                    try:
+                        features.append(int(feat, 16))
+                    except:
+                        print("Could not parse feature with name %s" % (feat))
                 ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
                 print "no recipes in " + RECIPIE_DIR
                 pass
         return ent
 
+class SingleFeatureDiscoverer:
+    def __init__(self, nxsfile, feature):
+        self.file = h5py.File(nxsfile, 'r')
+        self.feature = feature
+
+    def entries(self):
+        ent = []
+        for entry in self.file.keys():
+            try:
+                ent.append(InsaneEntryWithFeatures(self.file, entry, [self.feature]))
+            except:
+                print("Issues with parsing feature %i"% self.feature)
+                pass
+        return ent
+
 
 if __name__ == '__main__':
-    import optparse
+    import argparse
 
-    usage = "%prog [options] nxs_file"
-    parser = optparse.OptionParser(usage=usage)
-    parser.add_option("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
-                      default=False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
+                        default=False)
+    parser.add_argument("-f", "--feature", dest="feature", help="Test file against a defined feature",
+                      default=None)
+    parser.add_argument("nexusfile", help="Nexus file to test")
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    if options.test:
-        disco = AllFeatureDiscoverer(args[0])
+    if args.feature:
+        try:
+            disco = SingleFeatureDiscoverer(args.nexusfile, int(args.feature, 16))
+        except:
+            print("The feature '%s' has not parsed correctly, exiting" %(args.feature))
+            sys.exit()
     else:
-        disco = InsaneFeatureDiscoverer(args[0])
+      if args.test:
+          disco = AllFeatureDiscoverer(args.nexusfile)
+      else:
+          disco = InsaneFeatureDiscoverer(args.nexusfile)
 
     for entry in disco.entries():
         fail_list = []
@@ -102,11 +131,12 @@ if __name__ == '__main__':
                 try:
                     print("\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
                     print("\t\t" + message.replace('\n', '\n\t\t'))
-                except:
-                    error_list.append(feat)
+                except :
+                    e = sys.exc_info()[0]
+                    error_list.append((feat, str(e)))
 
         if len(error_list) > 0:
             print("\nThe following features had unexpected errors (Are you running windows?):")
-            for feat in error_list:
-                print("  (%d)" % (feat))
+            for error in error_list:
+                print("  (%d)  %s" % error)
         print("\n")
