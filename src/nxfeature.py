@@ -130,7 +130,7 @@ if __name__ == '__main__':
             for feat, message in fail_list:
                 try:
                     print("\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
-                    print("\t\t" + message.replace('\n', '\n\t\t'))
+                    print("\t\t" + str(message).replace('\n', '\n\t\t'))
                 except :
                     e = sys.exc_info()[0]
                     error_list.append((feat, str(e)))
