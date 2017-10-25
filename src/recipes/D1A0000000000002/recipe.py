@@ -34,6 +34,9 @@ class NXcitation_manager(object):
     def add_citation(self, citation):
         self.NXcite_list.append(citation)
 
+    def get_number_of_citations(self):
+        return len(self.NXcite_list)
+
     def get_full_endnote(self):
         return "\n\n".join([cite.endnote for cite in self.NXcite_list])
 
@@ -43,10 +46,13 @@ class NXcitation_manager(object):
     def get_description_with_citations(self):
         return ".  ".join([cite.get_description_with_author() for cite in self.NXcite_list])
 
-    def __str__(self):
+    def get_summary(self):
         return "\nDESCRIPTION\n%s\n\nBIBTEX\n%s\n\nENDNOTE\n%s" % (self.get_description_with_citations(),
                                                                    self.get_full_bibtex(),
                                                                    self.get_full_endnote())
+
+    def __str__(self):
+        return "This file has %i citations" % (self.get_number_of_citations())
 
 
 class NXciteVisitor(object):
@@ -85,5 +91,6 @@ class recipe:
     def process(self):
         citation_manager = NXciteVisitor().get_citation_manager(self.file, self.entry)
         if citation_manager is not None:
-            return citation_manager
+            if citation_manager.get_number_of_citations() > 0:
+                return citation_manager
         raise AssertionError("This file does not contain any NXcite information")
