@@ -89,12 +89,15 @@ class SingleFeatureDiscoverer:
 
 if __name__ == '__main__':
     import argparse
+    import traceback
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--test", dest="test", help="Test file against all recipes", action="store_true",
                         default=False)
     parser.add_argument("-f", "--feature", dest="feature", help="Test file against a defined feature",
                       default=None)
+    parser.add_argument("-v", "--verbose", dest="verbose", help="Include full stacktraces of failues", action="store_true",
+                        default=False)
     parser.add_argument("nexusfile", help="Nexus file to test")
 
     args = parser.parse_args()
@@ -121,22 +124,23 @@ if __name__ == '__main__':
                 response = entry.feature_response(feat)
                 print("\t%s (%d) %s" % (entry.feature_title(feat), feat, response))
             except AssertionError as ae:
-                fail_list.append((feat, ae))
+                fail_list.append((feat, str(ae)))
             except Exception as e:
-                fail_list.append((feat, "Undefined validation error:(%s)" % e))
+                error_list.append((feat, str(traceback.format_exc())))
 
         if len(fail_list) > 0:
-            print("\nThe following features failed to validate:")
+            print("\n\tThe following features failed to validate:")
             for feat, message in fail_list:
-                try:
-                    print("\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
-                    print("\t\t" + str(message).replace('\n', '\n\t\t'))
-                except :
-                    e = sys.exc_info()[0]
-                    error_list.append((feat, str(e)))
+                print("\t\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
+                print("\t\t\t" + message.replace('\n', '\n\t\t'))
 
         if len(error_list) > 0:
-            print("\nThe following features had unexpected errors (Are you running windows?):")
-            for error in error_list:
-                print("  (%d)  %s" % error)
+            print("\n\tThe following features had unexpected errors (Are you running windows?):")
+            for feat, message in error_list:
+                try:
+                    print("\t\t%s (%d) had an unexpected error" % (entry.feature_title(feat), feat))
+                    if args.verbose:
+                        print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
+                except:
+                    print("\t\tFeature (%d) could not be found" % (feat))
         print("\n")
