@@ -149,6 +149,8 @@ if __name__ == '__main__':
             disco = InsaneFeatureDiscoverer(args.nexusfile)
 
     factory = JUnitFactory()
+    
+    failed = False
     for entry in disco.entries():
         pass_list = []
         fail_list = []
@@ -169,6 +171,7 @@ if __name__ == '__main__':
             factory.add_test_case(feat, message)
 
         if len(fail_list) > 0:
+            failed = True
             print("\n\tThe following features failed to validate:")
             for feat, error_type, message, stack in fail_list:
                 try:
@@ -185,4 +188,4 @@ if __name__ == '__main__':
         factory.write(args.xml)
 
     # to fail on Travis, return non zero if fails
-    sys.exit(len(fail_list))
+    sys.exit(int(failed))
