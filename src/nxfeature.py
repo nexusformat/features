@@ -6,9 +6,6 @@ import importlib
 import sys
 import os
 
-# print "%016X" % int("C0FFEEBEEFC0FFEE", 16)
-# feature = "C0FFEEBEEFC0FFEE"
-
 RECIPIE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/recipes"
 sys.path.append(RECIPIE_DIR)
 
@@ -118,7 +115,7 @@ class SingleFeatureDiscoverer:
             try:
                 ent.append(InsaneEntryWithFeatures(self.file, entry, [self.feature]))
             except:
-                print("Issues with parsing feature %i"% self.feature)
+                print("Issues with parsing feature %i" % self.feature)
                 pass
         return ent
 
@@ -143,13 +140,13 @@ if __name__ == '__main__':
         try:
             disco = SingleFeatureDiscoverer(args.nexusfile, int(args.feature, 16))
         except:
-            print("The feature '%s' has not parsed correctly, exiting" %(args.feature))
+            print("The feature '%s' has not parsed correctly, exiting" % args.feature)
             sys.exit()
     else:
-      if args.test:
-          disco = AllFeatureDiscoverer(args.nexusfile)
-      else:
-          disco = InsaneFeatureDiscoverer(args.nexusfile)
+        if args.test:
+            disco = AllFeatureDiscoverer(args.nexusfile)
+        else:
+            disco = InsaneFeatureDiscoverer(args.nexusfile)
 
     factory = JUnitFactory()
     for entry in disco.entries():
@@ -187,7 +184,7 @@ if __name__ == '__main__':
                     if args.verbose:
                         print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
                 except:
-                    print("\t\tFeature (%d) could not be found" % (feat))
+                    print("\t\tFeature (%d) could not be found" % feat)
         print("\n")
     if args.xml:
         factory.write(args.xml)
