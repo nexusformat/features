@@ -112,7 +112,7 @@ def validate(entry):
     context = {}
     values = {}
     fails = []
-    for item, (optional, tests) in VALIDATE.iteritems():
+    for item, (optional, tests) in VALIDATE.items():
         if check_path(entry, item):
             for test in tests:
                 test(context, entry, item, values, fails)
