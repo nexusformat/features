@@ -134,7 +134,7 @@ if __name__ == '__main__':
                       default=None)
     parser.add_argument("-v", "--verbose", dest="verbose", help="Include full stacktraces of failures", action="store_true",
                         default=False)
-    parser.add_argument("-x", "--xml", dest="xml", help="XML file to write the junit output to", default="./junit_output.xml")
+    parser.add_argument("-x", "--xml", dest="xml", help="XML file to write the junit output to", default=None)
     parser.add_argument("nexusfile", help="Nexus file to test")
 
     args = parser.parse_args()
@@ -150,6 +150,7 @@ if __name__ == '__main__':
           disco = AllFeatureDiscoverer(args.nexusfile)
       else:
           disco = InsaneFeatureDiscoverer(args.nexusfile)
+
     factory = JUnitFactory()
     for entry in disco.entries():
         pass_list = []
@@ -188,5 +189,5 @@ if __name__ == '__main__':
                 except:
                     print("\t\tFeature (%d) could not be found" % (feat))
         print("\n")
-
-    factory.write(args.xml)
+    if args.xml:
+        factory.write(args.xml)
