@@ -89,9 +89,9 @@ def find_nx_diffraction_entries(nx_file, entry):
 
     def visitor(name, obj):
         if "NX_class" in obj.attrs.keys():
-            if obj.attrs["NX_class"] in ["NXentry", "NXsubentry"]:
+            if str(obj.attrs["NX_class"], 'utf8') in ["NXentry", "NXsubentry"]:
                 if "definition" in obj.keys():
-                    if obj["definition"].value == "NXdiffraction":
+                    if str(obj["definition"].value, 'utf8') == "NXdiffraction":
                         hits.append(obj)
 
     nx_file[entry].visititems(visitor)
