@@ -148,9 +148,9 @@ def find_entries(nx_file, entry):
 
     def visitor(name, obj):
         if "NX_class" in obj.attrs.keys():
-            if obj.attrs["NX_class"] in ["NXentry", "NXsubentry"]:
+            if str(obj.attrs["NX_class"], 'utf8') in ["NXentry", "NXsubentry"]:
                 if "definition" in obj.keys():
-                    if obj["definition"][()] == "NXmx":
+                    if str(obj["definition"][()], 'utf8') == "NXmx":
                         hits.append(obj)
 
     visitor(entry, nx_file[entry])
@@ -167,7 +167,7 @@ def find_class(nx_file, nx_class):
 
     def visitor(name, obj):
         if "NX_class" in obj.attrs.keys():
-            if obj.attrs["NX_class"] in [nx_class]:
+            if str(obj.attrs["NX_class"], 'utf8') == nx_class:
                 hits.append(obj)
 
     nx_file.visititems(visitor)
@@ -206,12 +206,12 @@ def convert_units(value, input_units, output_units):
         return value
     try:
         return converters[input_units][output_units](value)
-    except Exception, e:
+    except Exception:
         pass
     raise RuntimeError('Can\'t convert units "%s" to "%s"' % (input_units, output_units))
 
 
-def visit_dependancies(nx_file, item, visitor=None):
+def visit_dependencies(nx_file, item, visitor=None):
     """
     Walk the dependency chain and call a visitor function
 
@@ -229,7 +229,7 @@ def visit_dependancies(nx_file, item, visitor=None):
             raise RuntimeError("'%s' is a circular dependency" % depends_on)
         try:
             item = nx_file[depends_on]
-        except Exception, e:
+        except Exception:
             raise RuntimeError("'%s' is missing from nx_file" % depends_on)
         dependency_chain.append(depends_on)
         try:
@@ -253,8 +253,8 @@ def construct_vector(nx_file, item, vector=None):
             from scitbx import matrix
             item = nx_file[depends_on]
             value = item[()]
-            units = item.attrs['units']
-            ttype = item.attrs['transformation_type']
+            units = str(item.attrs['units'], 'utf8')
+            ttype = str(item.attrs['transformation_type'], 'utf8')
             vector = matrix.col(item.attrs['vector'])
             if ttype == 'translation':
                 value = convert_units(value, units, 'mm')
@@ -275,8 +275,8 @@ def construct_vector(nx_file, item, vector=None):
 
     if vector is None:
         value = nx_file[item][()]
-        units = nx_file[item].attrs['units']
-        ttype = nx_file[item].attrs['transformation_type']
+        units = str(nx_file[item].attrs['units'], 'uft8')
+        ttype = str(nx_file[item].attrs['transformation_type'], 'uft8')
         vector = nx_file[item].attrs['vector']
         if ttype == 'translation':
             value = convert_units(value, units, "mm")
@@ -285,7 +285,7 @@ def construct_vector(nx_file, item, vector=None):
         pass
     visitor = TransformVisitor(vector)
 
-    visit_dependancies(nx_file, item, visitor)
+    visit_dependencies(nx_file, item, visitor)
 
     return visitor.result()
 
@@ -295,8 +295,7 @@ def run_checks(handle, items):
     Run checks for datasets
 
     """
-    from os.path import join
-    for item, detail in items.iteritems():
+    for item, detail in items.items():
         min_occurs = detail["minOccurs"]
         checks = detail['checks']
         assert (min_occurs in [0, 1])
@@ -342,7 +341,7 @@ class NXdetector_module(object):
                     check_attr("transformation_type"),
                     check_attr("vector"),
                     check_attr("offset"),
-                    check_attr("units", dtype=str),
+                    check_attr("units", dtype=bytes),
                     check_attr("depends_on")
                 ]
             },
@@ -353,7 +352,7 @@ class NXdetector_module(object):
                     check_attr("transformation_type"),
                     check_attr("vector"),
                     check_attr("offset"),
-                    check_attr("units", dtype=str),
+                    check_attr("units", dtype=bytes),
                     check_attr("depends_on")
                 ]
             },
@@ -364,7 +363,7 @@ class NXdetector_module(object):
                     check_attr("transformation_type"),
                     check_attr("vector"),
                     check_attr("offset"),
-                    check_attr("units", dtype=str),
+                    check_attr("units", dtype=bytes),
                     check_attr("depends_on"),
                 ]
             },
@@ -517,7 +516,7 @@ class NXdetector(object):
                 "minOccurs": 1,
                 "checks": [
                     check_dset(dtype=["float32", "float64"], is_scalar=True),
-                    check_attr("units", dtype=str)
+                    check_attr("units", dtype=bytes)
                 ]
             },
             "threshold_energy": {
@@ -539,7 +538,7 @@ class NXdetector(object):
         for entry in find_class(self.handle, "NXdetector_module"):
             try:
                 self.modules.append(NXdetector_module(entry, errors=errors))
-            except Exception, e:
+            except Exception as e:
                 if errors is not None:
                     errors.append(str(e))
 
@@ -563,7 +562,7 @@ class NXinstrument(object):
         for entry in find_class(self.handle, "NXdetector"):
             try:
                 self.detectors.append(NXdetector(entry, errors=errors))
-            except Exception, e:
+            except Exception as e:
                 if errors is not None:
                     errors.append(str(e))
 
@@ -671,7 +670,7 @@ class NXsample(object):
         for entry in find_class(self.handle, "NXbeam"):
             try:
                 self.beams.append(NXbeam(entry, errors=errors))
-            except Exception, e:
+            except Exception as e:
                 if errors is not None:
                     errors.append(str(e))
 
@@ -722,7 +721,7 @@ class NXmxEntry(object):
         for entry in find_class(self.handle, "NXinstrument"):
             try:
                 self.instruments.append(NXinstrument(entry, errors=errors))
-            except Exception, e:
+            except Exception as e:
                 if errors is not None:
                     errors.append(str(e))
 
@@ -731,7 +730,7 @@ class NXmxEntry(object):
         for entry in find_class(self.handle, "NXsample"):
             try:
                 self.samples.append(NXsample(entry, errors=errors))
-            except Exception, e:
+            except Exception as e:
                 if errors is not None:
                     errors.append(str(e))
 
@@ -740,7 +739,7 @@ class NXmxEntry(object):
         for entry in find_class(self.handle, "NXdata"):
             try:
                 self.data.append(NXdata(entry, errors=errors))
-            except Exception, e:
+            except Exception as e:
                 if errors is not None:
                     errors.append(str(e))
 
@@ -800,7 +799,7 @@ class recipe:
         for entry in find_entries(self.file, "/"):
             try:
                 self.entries.append(NXmxEntry(entry, errors=self.errors))
-            except Exception, e:
+            except Exception as e:
                 self.errors.append(str(e))
 
         # Check we've got some stuff
