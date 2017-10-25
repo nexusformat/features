@@ -3,10 +3,10 @@ import numpy as np
 
 
 class NXlogExamples:
-    def __init__(self):
-        pass
+    def __init__(self, nxlog_group):
+        self.nxlog_group = nxlog_group
 
-    def get_times_and_values_in_time_range(self, nxlog_group, start_time, end_time):
+    def get_times_and_values_in_time_range(self, start_time, end_time):
         """
         Demonstrates use of "cue" datasets to avoid reading the entire log when
         only a small time slice is required.
@@ -16,17 +16,17 @@ class NXlogExamples:
         :param end_time: End time of range of interest
         :return: Times in requested range and their corresponding values
         """
-        cue_timestamps = nxlog_group['cue_timestamp_zero'][...]
+        cue_timestamps = self.nxlog_group['cue_timestamp_zero'][...]
         # cue_index maps between indices in the cue timestamps and the full timestamps dataset
-        cue_indices = nxlog_group['cue_index'][...]
+        cue_indices = self.nxlog_group['cue_index'][...]
 
         # Look up the positions in the full timestamp list where the cue timestamps are in our range of interest
         range_indices = cue_indices[np.append((start_time < cue_timestamps[1:]), [True]) &
                                     np.append([True], (end_time > cue_timestamps[:-1]))][[0, -1]]
 
         # Extract a slice of the log which we know contains the time range we are interested in
-        times = nxlog_group['time'][range_indices[0]:range_indices[1]]
-        values = nxlog_group['value'][range_indices[0]:range_indices[1]]
+        times = self.nxlog_group['time'][range_indices[0]:range_indices[1]]
+        values = self.nxlog_group['value'][range_indices[0]:range_indices[1]]
 
         # Truncate them to the exact range
         times_mask = (start_time <= times) & (times <= end_time)
@@ -34,6 +34,12 @@ class NXlogExamples:
         values = values[times_mask]
 
         return times, values
+
+    def __str__(self):
+        return "Valid NXlog group at " + self.nxlog_group.name + \
+               " containing " + str(self.nxlog_group['value'].len()) + " entries"
+
+    __repr__ = __str__
 
 
 class _NXlogFinder(object):
@@ -133,7 +139,9 @@ class recipe:
         nx_log_list = nx_log.get_NXlog(self.file, self.entry)
         if len(nx_log_list) == 0:
             raise AssertionError("No NXlog entries found")
+        examples = []
         for nx_log_entry in nx_log_list:
             validate(nx_log_entry)
+            examples.append(NXlogExamples(nx_log_entry))
 
-        return NXlogExamples
+        return examples
