@@ -52,7 +52,7 @@ class _NXlogFinder(object):
 
     def _visit_NXlog(self, name, obj):
         if "NX_class" in obj.attrs.keys():
-            if "NXlog" in obj.attrs["NX_class"]:
+            if "NXlog" == str(obj.attrs["NX_class"], 'utf8'):
                 self.hits.append(obj)
 
     def get_NXlog(self, nx_file, entry):
@@ -72,12 +72,12 @@ def validate(nx_log):
     _check_datasets_have_same_length(nx_log, ['cue_timestamp_zero', 'cue_index'], fails)
     if 'time' in nx_log:
         if 'value' in nx_log:
-            if nx_log['value'].size()[0] != nx_log['time'].size()[0]:
+            if nx_log['value'].shape[0] != nx_log['time'].shape[0]:
                 fails.append(
                     'The first dimension of the value dataset should have the '
                     'same size as the time dataset in ' + nx_log.name)
         if 'raw_value' in nx_log:
-            if nx_log['raw_value'].size()[0] != nx_log['time'].size()[0]:
+            if nx_log['raw_value'].shape[0] != nx_log['time'].shape[0]:
                 fails.append(
                     'The first dimension of the raw_value dataset should have the '
                     'same size as the time dataset in ' + nx_log.name)
