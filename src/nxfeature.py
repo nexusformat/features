@@ -174,9 +174,9 @@ if __name__ == '__main__':
         if len(fail_list) > 0:
             print("\n\tThe following features failed to validate:")
             for feat, message in fail_list:
-                    print("\t\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
-                    print("\t\t\t" + message.replace('\n', '\n\t\t'))
-                    factory.add_test_case(entry.feature_title(feat), feat, "AssertionError", message)
+                print("\t\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
+                print("\t\t\t" + message.replace('\n', '\n\t\t'))
+                factory.add_test_case(entry.feature_title(feat), feat, "AssertionError", message)
 
         if len(error_list) > 0:
             print("\n\tThe following features had unexpected errors (Are you running windows?):") #build error
