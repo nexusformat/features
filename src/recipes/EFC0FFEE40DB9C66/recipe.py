@@ -18,7 +18,7 @@ class recipe:
             scan_command = self.file[self.entry + "/scan_command"][0]
 
         except Exception as e:
-            raise Exception("this feature does not validate correctly: " + e)
+            raise Exception("this feature does not validate correctly: " + str(e))
 
         # better have custom exceptions
         return {"scan_command": scan_command}
