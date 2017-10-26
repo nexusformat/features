@@ -52,4 +52,5 @@ The travis build checks the example files against all recipes in the repository.
 
 [![Build Status](https://travis-ci.org/nexusformat/features.svg?branch=master)](https://travis-ci.org/nexusformat/features)
 [![Code Health](https://landscape.io/github/nexusformat/features/master/landscape.svg?style=flat)](https://landscape.io/github/nexusformat/features/master)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/nexusformat/features/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/nexusformat/features/?branch=master)
 
