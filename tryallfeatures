@@ -1,0 +1,21 @@
+#! /bin/bash
+
+RETURN_CODE=0
+for feature in $( cd src/recipes/ ; echo [0-9A-F]* ) ; do 
+    echo ===== Trying "$feature" ===== 
+    WORKING_FILES=
+    for filename in examples/*.nxs; do 
+        echo === "$filename" ===
+        if python src/nxfeature.py -f "$feature" "$filename" ; then
+           WORKING_FILES="$filename $WORKING_FILES"  
+        fi	
+    done
+    if test "X$WORKING_FILES" = "X" ; then
+        RETURN_CODE=1
+        echo ==== ERROR "$feature" checks out on none of the example files ====  
+    else
+        echo ==== SUCCESS "$feature" checks out on "$WORKING_FILES" ====  
+    fi
+done
+
+exit $RETURN_CODE
