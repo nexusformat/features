@@ -55,12 +55,12 @@ class InsaneEntryWithFeatures:
         return self.featurearray
 
     def feature_response(self, featureid):
-        featuremodule = importlib.import_module("%016X.recipe" % featureid)
+        featuremodule = importlib.import_module("{:0>16X}.recipe".format(featureid))
         r = featuremodule.recipe(self.nxsfile, self.entrypath)
         return r.process()
 
     def feature_title(self, featureid):
-        featuremodule = importlib.import_module("%016X.recipe" % featureid)
+        featuremodule = importlib.import_module("{:0>16X}.recipe".format(featureid))
         r = featuremodule.recipe(self.nxsfile, self.entrypath)
         return r.title
 
@@ -72,7 +72,7 @@ class InsaneFeatureDiscoverer:
     def entries(self):
         ent = []
         for entry in self.file.keys():
-            path = "/%s/features" % entry
+            path = "/{}/features".format(entry)
             try:
                 features = self.file[path]
                 if features.dtype == numpy.dtype("uint64"):
@@ -96,7 +96,7 @@ class AllFeatureDiscoverer:
                     try:
                         features.append(int(feat, 16))
                     except:
-                        print("Could not parse feature with name %s" % (feat))
+                        print("Could not parse feature with name {}".format(feat))
                 ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
                 print("no recipes in " + RECIPIE_DIR)
@@ -115,7 +115,7 @@ class SingleFeatureDiscoverer:
             try:
                 ent.append(InsaneEntryWithFeatures(self.file, entry, [self.feature]))
             except:
-                print("Issues with parsing feature %i" % self.feature)
+                print("Issues with parsing feature {}".format(self.feature))
                 pass
         return ent
 
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         try:
             disco = SingleFeatureDiscoverer(args.nexusfile, int(args.feature, 16))
         except:
-            print("The feature '%s' has not parsed correctly, exiting" % args.feature)
+            print("The feature '{}' has not parsed correctly, exiting".format(args.feature))
             sys.exit()
     else:
         if args.test:
@@ -155,12 +155,12 @@ if __name__ == '__main__':
         pass_list = []
         fail_list = []
 
-        print("Entry \"%s\" appears to contain the following features (they validate correctly): " % entry.entrypath)
+        print("Entry \"{}\" appears to contain the following features (they validate correctly): ".format(entry.entrypath))
         for feat in entry.features():
             try:
                 response = entry.feature_response(feat)
                 pass_list.append((feat, response))
-                print("\t%s (%d) %s" % (entry.feature_title(feat), feat, response))
+                print("\t{} ({}) {}".format(entry.feature_title(feat), feat, response))
             except AssertionError as ae:
                 fail_list.append((feat, type(ae).__name__, str(ae), None))
             except Exception as e:
@@ -175,14 +175,14 @@ if __name__ == '__main__':
             print("\n\tThe following features failed to validate:")
             for feat, error_type, message, stack in fail_list:
                 try:
-                    print("\t\t%s (%d) is invalid with the following errors:" % (entry.feature_title(feat), feat))
+                    print("\t\t{} ({}) is invalid with the following errors:".format(entry.feature_title(feat), feat))
                     print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
                     if args.verbose and stack:
                         print("\t\t\t" + stack.replace('\n', '\n\t\t\t'))
                     factory.add_test_case(entry.feature_title(feat), feat, error_type, message)
                 except:
                     if args.verbose:
-                        print("\t\tFeature (%d) could not be found" % feat)
+                        print("\t\tFeature ({}) could not be found".format(feat))
         print("\n")
     if args.xml:
         factory.write(args.xml)

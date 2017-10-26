@@ -16,7 +16,7 @@ class recipe:
     def findNXsample(self):
         for node in self.file[self.entry].keys():
             try:
-                absnode = "%s/%s" % (self.entry, node)
+                absnode = "{}/{}".format(self.entry, node)
                 if str(self.file[absnode].attrs["NX_class"], 'utf8') == "NXsample":
                     return absnode
             except:

@@ -68,7 +68,7 @@ class NXDataWrapper:
         return result
 
     def __repr__(self):
-        return "%s (%s):: %s (%s)" % (self.name, self.signal, str(self.get_shape()), ','.join(self.primary_axes_names))
+        return "{} ({}):: {} ({})".format(self.name, self.signal, str(self.get_shape()), ','.join(self.primary_axes_names))
 
 
 class recipe:
@@ -90,26 +90,26 @@ class recipe:
         datasets = list(obj.keys())
         attributes = obj.attrs.keys()
         if "signal" not in attributes:
-            self.failure_comments.append("%s : Signal attribute should be present in NXdata" % obj.name)
+            self.failure_comments.append("{} : Signal attribute should be present in NXdata".format(obj.name))
             return
         signal = obj.attrs['signal'][0]
         if signal not in datasets:
             self.failure_comments.append(
-                "%s : Signal attribute points to a non-existent dataset (%s)" % (obj.name, signal))
+                "{} : Signal attribute points to a non-existent dataset ({})".format(obj.name, signal))
             return
         if "axes" not in attributes:
-            self.failure_comments.append("%s : No 'axes' attribute is present" % (obj.name))
+            self.failure_comments.append("{} : No 'axes' attribute is present".format(obj.name))
             return
         for axis in obj.attrs['axes']:
             if axis not in datasets + ['.']:
                 self.failure_comments.append(
-                    "%s : Axis attribute points to a non-existent dataset (%s)" % (obj.name, axis))
+                    "{} : Axis attribute points to a non-existent dataset ({})".format(obj.name, axis))
                 return
         datasets.remove(signal)
         for dataset in datasets:
             if dataset + "_indices" not in attributes:
                 self.failure_comments.append(
-                    "%s : Axis dataset has no corresponding _indices attribute (%s)" % (obj.name, dataset))
+                    "{} : Axis dataset has no corresponding _indices attribute ({})".format(obj.name, dataset))
                 return
 
         self.NXdatas.append(NXDataWrapper(obj))

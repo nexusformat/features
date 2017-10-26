@@ -21,7 +21,7 @@ class NXcitation(object):
                 return part.replace("%D", "").strip()
 
     def get_description_with_author(self):
-        return "%s \\ref{%s}(%s, %s)" % (self.description,
+        return "{} \\ref{{}}({}, {})".format(self.description,
                                          self.get_bibtex_ref(),
                                          self.get_first_author(),
                                          self.get_date())
@@ -47,12 +47,12 @@ class NXcitation_manager(object):
         return ".  ".join([cite.get_description_with_author() for cite in self.NXcite_list])
 
     def get_summary(self):
-        return "\nDESCRIPTION\n%s\n\nBIBTEX\n%s\n\nENDNOTE\n%s" % (self.get_description_with_citations(),
+        return "\nDESCRIPTION\n{}\n\nBIBTEX\n{}\n\nENDNOTE\n{}".format(self.get_description_with_citations(),
                                                                    self.get_full_bibtex(),
                                                                    self.get_full_endnote())
 
     def __str__(self):
-        return "This file has %i citations" % (self.get_number_of_citations())
+        return "This file has {} citations".format(self.get_number_of_citations())
 
 
 class NXciteVisitor(object):
