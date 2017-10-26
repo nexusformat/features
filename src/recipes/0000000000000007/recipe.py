@@ -5,37 +5,37 @@ def check_len(context, entry, item, values, fails):
         context['nFrames_item'] = item
     else:
         if frames not in [context['nFrames'], 1]:
-            fails.append("'%s' does not have the same number of frames as '%s'" % (item, context['nFrames_item']))
+            fails.append("'{}' does not have the same number of frames as '{}'".format(item, context['nFrames_item']))
 
 
 def check_int(context, entry, item, value, fails):
     dtype = entry[item].dtype
     if dtype not in ["int64"]:
-        fails.append("'%s' is of type %s, expected int32 or int64" % (item, dtype))
+        fails.append("'{}' is of type {}, expected int32 or int64".format(item, dtype))
 
 
 def check_bool(context, entry, item, value, fails):
     dtype = entry[item].dtype
     if dtype not in ["bool"]:
-        fails.append("'%s' is of type %s, expected bool" % (item, dtype))
+        fails.append("'{}' is of type {}, expected bool".format(item, dtype))
 
 
 def check_uint(context, entry, item, value, fails):
     dtype = entry[item].dtype
     if dtype not in ["uint64"]:
-        fails.append("'%s' is of type %s, expected uint64" % (item, dtype))
+        fails.append("'{}' is of type {}, expected uint64".format(item, dtype))
 
 
 def check_float(context, entry, item, value, fails):
     dtype = entry[item].dtype
     if dtype not in ["float64"]:
-        fails.append("'%s' is of type %s, expected float64" % (item, dtype))
+        fails.append("'{}' is of type {}, expected float64".format(item, dtype))
 
 
 def check_array_uint(context, entry, item, value, fails):
     dtype = entry[item].dtype
     if dtype not in ["object"]:
-        fails.append("'%s' is of type %s, expected object" % (item, dtype))
+        fails.append("'{}' is of type {}, expected object".format(item, dtype))
 
 
 VALIDATE = {
@@ -117,7 +117,7 @@ def validate(entry):
             for test in tests:
                 test(context, entry, item, values, fails)
         elif not optional:
-            fails.append("'NXdiffraction/%s' is missing from the NXdiffraction entry" % (item))
+            fails.append("'NXdiffraction/{}' is missing from the NXdiffraction entry".format(item))
     if len(fails) > 0:
         raise AssertionError('\n'.join(fails))
     return values

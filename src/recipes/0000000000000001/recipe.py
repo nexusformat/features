@@ -5,7 +5,7 @@ def check_nframes(context, nxTomo, item, values, fails):
         context['nFrames_item'] = item
     else:
         if frames not in [context['nFrames'], 1]:
-            fails.append("'%s' does not have the same number of frames as '%s'" % (item, context['nFrames_item']))
+            fails.append("'{}' does not have the same number of frames as '{}'".format(item, context['nFrames_item']))
 
 
 def include_data(context, nxTomo, item, values, fails):
@@ -15,7 +15,7 @@ def include_data(context, nxTomo, item, values, fails):
 def check_image_keys(context, nxTomo, item, values, fails):
     data = nxTomo[item][...]
     if data.max() > 3 or data.min() < 0:
-        fails.append("'%s' has values outside of the normal range 0 to 3" % (item))
+        fails.append("'{}' has values outside of the normal range 0 to 3".format(item))
 
 
 INCLUDE_DATA = 'include_data'
@@ -93,7 +93,7 @@ def validate(nxTomo):
             for test in VALIDATE[item]:
                 test(context, nxTomo, item, values, fails)
         else:
-            fails.append("'NXtomo/%s' is missing from the NXtomo entry" % item)
+            fails.append("'NXtomo/{}' is missing from the NXtomo entry".format(item))
     if len(fails) > 0:
         raise AssertionError('\n'.join(fails))
     return values
