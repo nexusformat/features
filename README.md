@@ -25,7 +25,7 @@ should
 |:------------- |:--------------------|:-------------|
 | `-h`, `--help`          |                     |Show the help page for this script.|
 | `-t`, `--test`          |                     |Test the file against all possible recipes.|
-| `-f`, `--feature=`          |feature name         |Test the file against specified recipe.|
+| `-f`, `--feature=`          |feature id         |Test the file against specified recipe.|
 | `-v`, `--verbose`          |                     |Include full stacktraces of failures.|
 | `-x`, `--xml=`          |XML file location         |XML file to write the junit output to. Note: does not need to be an existing file as the script will create/truncate it.|
 
