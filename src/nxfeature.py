@@ -175,7 +175,7 @@ if __name__ == '__main__':
             print("\n\tThe following features failed to validate:")
             for feat, error_type, message, stack in fail_list:
                 try:
-                    print("\t\t{} ({:0>16X}) is invalid with the following errors:".format(entry.feature_title(feat), feat))
+                    print("\t\t{} ({:0>16X})[{}] is invalid with the following errors:".format(entry.feature_title(feat), feat, feat))
                     print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
                     if args.verbose and stack:
                         print("\t\t\t" + stack.replace('\n', '\n\t\t\t'))
