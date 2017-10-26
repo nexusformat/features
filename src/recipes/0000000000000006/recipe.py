@@ -10,7 +10,7 @@ class check_dtype(object):
     def __call__(self, dset):
         dtype = dset.dtype
         if dtype not in self.dtype:
-            return False, "%s is type %s, expected %s" % (
+            return False, "{} is type {}, expected {}".format(
                 dset.name, dtype, ', '.join(self.dtype))
         return True, ""
 
@@ -27,7 +27,7 @@ class check_dims(object):
     def __call__(self, dset):
         dims = len(dset.shape)
         if not dims == self.dims:
-            return False, '%s has dims %s, expected %s' % (
+            return False, '{} has dims {}, expected {}'.format(
                 dset.name, str(dims), str(self.dims))
         return True, ''
 
@@ -44,7 +44,7 @@ class check_shape(object):
     def __call__(self, dset):
         shape = dset.shape
         if not shape == self.shape:
-            return False, '%s has shape %s, expected %s' % (
+            return False, '{} has shape {}, expected {}'.format(
                 dset.name, str(shape), str(self.shape))
         return True, ''
 
@@ -65,7 +65,7 @@ class check_is_scalar(object):
         except Exception:
             s = False
         if s != self.is_scalar:
-            return False, '%s == scalar is %s, expected %s' % (
+            return False, '{} == scalar is {}, expected {}'.format(
                 dset.name, s, self.is_scalar)
         return True, ''
 
@@ -127,15 +127,15 @@ class check_attr(object):
 
     def __call__(self, dset):
         if self.name not in dset.attrs.keys():
-            raise RuntimeError("'%s' does not have an attribute '%s'" % (
+            raise RuntimeError("'{}' does not have an attribute '{}'".format(
                 dset.name, self.name))
         elif self.value is not None and dset.attrs[self.name] != self.value:
-            raise RuntimeError("attribute '%s' of %s has value %s, expected %s" % (
+            raise RuntimeError("attribute '{}' of {} has value {}, expected {}".format(
                 self.name, dset.name, dset.attrs[self.name], self.value))
         elif self.dtype is not None:
             dtype = type(dset.attrs[self.name])
             if not isinstance(dset.attrs[self.name], self.dtype):
-                raise RuntimeError("attribute '%s' of '%s' has type %s, expected %s" % (
+                raise RuntimeError("attribute '{}' of '{}' has type {}, expected {}".format(
                     self.name, dset.name, dtype, self.dtype))
 
 
@@ -208,7 +208,7 @@ def convert_units(value, input_units, output_units):
         return converters[input_units][output_units](value)
     except Exception:
         pass
-    raise RuntimeError('Can\'t convert units "%s" to "%s"' % (input_units, output_units))
+    raise RuntimeError('Can\'t convert units "{}" to "{}"'.format(input_units, output_units))
 
 
 def visit_dependencies(nx_file, item, visitor=None):
@@ -226,16 +226,16 @@ def visit_dependencies(nx_file, item, visitor=None):
         if visitor is not None:
             visitor(nx_file, depends_on)
         if depends_on in dependency_chain:
-            raise RuntimeError("'%s' is a circular dependency" % depends_on)
+            raise RuntimeError("'{}' is a circular dependency".format(depends_on))
         try:
             item = nx_file[depends_on]
         except Exception:
-            raise RuntimeError("'%s' is missing from nx_file" % depends_on)
+            raise RuntimeError("'{}' is missing from nx_file".format(depends_on))
         dependency_chain.append(depends_on)
         try:
             depends_on = nx_file[depends_on].attrs["depends_on"]
         except Exception:
-            raise RuntimeError("'%s' contains no depends_on attribute" % depends_on)
+            raise RuntimeError("'{}' contains no depends_on attribute".format(depends_on))
 
 
 def construct_vector(nx_file, item, vector=None):
@@ -265,10 +265,10 @@ def construct_vector(nx_file, item, vector=None):
                 elif units == 'deg':
                     deg = True
                 else:
-                    raise RuntimeError('Invalid units: %s' % units)
+                    raise RuntimeError('Invalid units: {}'.format(units))
                 self.vector.rotate(axis=vector, angle=value, deg=deg)
             else:
-                raise RuntimeError('Unknown transformation_type: %s' % ttype)
+                raise RuntimeError('Unknown transformation_type: {}'.format(ttype))
 
         def result(self):
             return self.vector
@@ -304,7 +304,7 @@ def run_checks(handle, items):
         except Exception:
             dset = None
             if min_occurs != 0:
-                raise RuntimeError('Could not find %s in %s' % (item, handle.name))
+                raise RuntimeError('Could not find {} in {}'.format(item, handle.name))
             else:
                 continue
         if dset is not None:
@@ -544,7 +544,7 @@ class NXdetector(object):
 
         # Check we've got some stuff
         if len(self.modules) == 0:
-            raise RuntimeError('No NXdetector_module in %s' % self.handle.name)
+            raise RuntimeError('No NXdetector_module in {}'.format(self.handle.name))
 
 
 class NXinstrument(object):
@@ -568,7 +568,7 @@ class NXinstrument(object):
 
         # Check we've got stuff
         if len(self.detectors) == 0:
-            raise RuntimeError('No NXdetector in %s' % self.handle.name)
+            raise RuntimeError('No NXdetector in {}'.format(self.handle.name))
 
 
 class NXbeam(object):
@@ -676,7 +676,7 @@ class NXsample(object):
 
         # Check we've got stuff
         if len(self.beams) == 0:
-            raise RuntimeError('No NXbeam in %s' % self.handle.name)
+            raise RuntimeError('No NXbeam in {}'.format(self.handle.name))
 
 
 class NXdata(object):
@@ -745,11 +745,11 @@ class NXmxEntry(object):
 
         # Check we've got some stuff
         if len(self.instruments) == 0:
-            raise RuntimeError('No NXinstrument in %s' % self.handle.name)
+            raise RuntimeError('No NXinstrument in {}'.format(self.handle.name))
         if len(self.samples) == 0:
-            raise RuntimeError('No NXsample in %s' % self.handle.name)
+            raise RuntimeError('No NXsample in {}'.format(self.handle.name))
         if len(self.data) == 0:
-            raise RuntimeError('No NXdata in %s' % self.handle.name)
+            raise RuntimeError('No NXdata in {}'.format(self.handle.name))
 
 
 def validate(nx_file, item, test):
@@ -805,13 +805,13 @@ class recipe:
         # Check we've got some stuff
         if len(self.entries) == 0:
             raise RuntimeError("""
-        Error reading NXmxfile: %s
+        Error reading NXmxfile: {}
           No NXmx entries in file
 
         The following errors occurred:
 
-        %s
-      """ % (self.file.filename, "\n".join(self.errors)))
+        {}
+      """.format(self.file.filename, "\n".join(self.errors)))
 
 
 if __name__ == '__main__':

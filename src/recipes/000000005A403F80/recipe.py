@@ -53,7 +53,7 @@ class recipe(object):
         for d in hits:
             h = hits[d]
             if len(h) != nh:
-                msg += 'Detector %s missing fields: only %s\n' % d, h 
+                msg += 'Detector {} missing fields: only {}\n'.format(d, h)
         if msg:
             raise Exception(msg)
 
