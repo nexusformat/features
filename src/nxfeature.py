@@ -55,12 +55,12 @@ class InsaneEntryWithFeatures:
         return self.featurearray
 
     def feature_response(self, featureid):
-        featuremodule = importlib.import_module("{}16X.recipe".format(featureid))
+        featuremodule = importlib.import_module("{:0>16X}.recipe".format(featureid))
         r = featuremodule.recipe(self.nxsfile, self.entrypath)
         return r.process()
 
     def feature_title(self, featureid):
-        featuremodule = importlib.import_module("{}16X.recipe".format(featureid))
+        featuremodule = importlib.import_module("{:0>16X}.recipe".format(featureid))
         r = featuremodule.recipe(self.nxsfile, self.entrypath)
         return r.title
 
