@@ -1,6 +1,6 @@
 def _visit_NXdetector_with_image_key(name, obj):
     if "NX_class" in obj.attrs.keys():
-        if obj.attrs["NX_class"] in ["NXdetector"]:
+        if str(obj.attrs["NX_class"], 'utf8') in ["NXdetector"]:
             if "image_key" in obj.keys():
                 return obj
 
