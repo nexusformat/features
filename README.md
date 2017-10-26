@@ -20,7 +20,16 @@ should
 * successfully load and instantiate the recipe class(es)
 * process the feature(s) and output 
 
-You can use the -t flag to test the file against all possible recipes.
+#### Optional Flags
+| Flag          | Arguments           | Description  |
+|:------------- |:--------------------|:-------------|
+| `-h`, `--help`          |                     |Show the help page for this script.|
+| `-t`, `--test`          |                     |Test the file against all possible recipes.|
+| `-f`, `--feature=`          |feature id         |Test the file against specified recipe.|
+| `-v`, `--verbose`          |                     |Include full stacktraces of failures.|
+| `-x`, `--xml=`          |XML file location         |XML file to write the junit output to. Note: does not need to be an existing file as the script will create/truncate it.|
+
+
 
 ## Submitting your own features
 
