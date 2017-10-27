@@ -9,7 +9,7 @@ class NXDataWrapper:
         datasets = list(NXdata.keys())
 
         # get the name of the signal from the metadata
-        signal = NXdata.attrs['signal'][0]
+        signal = str(NXdata.attrs['signal'][0],"utf-8")
         self.signal = signal
 
         # remove this from the list so we don't add it to the secondary axes
@@ -27,6 +27,7 @@ class NXDataWrapper:
         self.primary_axes = []
         self.primary_axes_names = []
         for axis in NXdata.attrs['axes']:
+            axis = str(axis,"utf-8")
             # if the axis is a . then put a none in the list or the real dataset
             if axis in ['.']:
                 self.primary_axes.append(None)
@@ -85,14 +86,14 @@ class recipe:
     def visitor(self, name, obj):
         if "NX_class" not in obj.attrs.keys():
             return
-        if obj.attrs["NX_class"] not in ["NXdata"]:
+        if str(obj.attrs["NX_class"][0],"utf-8") not in ["NXdata"]:
             return
         datasets = list(obj.keys())
         attributes = obj.attrs.keys()
         if "signal" not in attributes:
             self.failure_comments.append("{} : Signal attribute should be present in NXdata".format(obj.name))
             return
-        signal = obj.attrs['signal'][0]
+        signal = str(obj.attrs['signal'][0],"utf-8")
         if signal not in datasets:
             self.failure_comments.append(
                 "{} : Signal attribute points to a non-existent dataset ({})".format(obj.name, signal))
@@ -101,7 +102,7 @@ class recipe:
             self.failure_comments.append("{} : No 'axes' attribute is present".format(obj.name))
             return
         for axis in obj.attrs['axes']:
-            if axis not in datasets + ['.']:
+            if str(axis,"utf-8") not in datasets + ['.']:
                 self.failure_comments.append(
                     "{} : Axis attribute points to a non-existent dataset ({})".format(obj.name, axis))
                 return

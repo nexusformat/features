@@ -20,7 +20,16 @@ should
 * successfully load and instantiate the recipe class(es)
 * process the feature(s) and output 
 
-You can use the -t flag to test the file against all possible recipes.
+#### Optional Flags
+| Flag          | Arguments           | Description  |
+|:------------- |:--------------------|:-------------|
+| `-h`, `--help`          |                     |Show the help page for this script.|
+| `-t`, `--test`          |                     |Test the file against all possible recipes.|
+| `-f`, `--feature=`          |feature id         |Test the file against specified recipe.|
+| `-v`, `--verbose`          |                     |Include full stacktraces of failures.|
+| `-x`, `--xml=`          |XML file location         |XML file to write the junit output to. Note: does not need to be an existing file as the script will create/truncate it.|
+
+
 
 ## Submitting your own features
 
@@ -30,11 +39,11 @@ Features are referenced by a (semi-)random 64 bit uint identifier. To get an ID 
 
 1. clone this repository into your own Github account or organisation.
 2. checkout your clone 
-3. run ./newfeature which will
-  a. check your clone is up to date 
-  b. ask a few questions on the feature you indend to propose
-  c. register the proposal with our webservice which will issue a unique ID
-  d. generate some template code as a starting point
+3. run ./newfeature which will:
+    * check your clone is up to date 
+    * ask a few questions on the feature you indend to propose
+    * register the proposal with our webservice which will issue a unique ID
+    * generate some template code as a starting point
 5. activate the feature by clicking on the link in the confirmation mail you received from the webservice
 4. develop your code
 6. submit a Github pull request when you are done with your code
