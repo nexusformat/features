@@ -156,27 +156,30 @@ if __name__ == '__main__':
             pass_list = []
             fail_list = []
 
-            print("Entry \"{}\" appears to contain the following features (they validate correctly): ".format(entry.entrypath))
+            print("Investigating features in {}[{}]".format(file, entry.entrypath))
             for feat in entry.features():
                 try:
                     response = entry.feature_response(feat)
                     pass_list.append((feat, response))
-                    print("\t{} ({}) {}".format(entry.feature_title(feat), feat, response))
                 except AssertionError as ae:
                     fail_list.append((feat, type(ae).__name__, str(ae), None))
                 except Exception as e:
                     fail_list.append((feat, type(e).__name__, str(e), str(traceback.format_exc())))
 
             output = str()
-            for feat, message in pass_list:
-                factory.add_test_case(feat, message)
+            
+            if len(pass_list) > 0:
+                print("\tThe following features are contained in this entry:")
+                for feat, message in pass_list:
+                    print("\t\t{} '{:0>16X}'({}) {}".format(entry.feature_title(feat), feat, feat, message))
+                    factory.add_test_case(feat, message)
 
             if len(fail_list) > 0:
                 failed = True
-                print("\n\tThe following features failed to validate:")
+                print("\tThe following features are NOT contained in this entry:")
                 for feat, error_type, message, stack in fail_list:
                     try:
-                        print("\t\t{} ({:0>16X})[{}] is invalid with the following errors:".format(entry.feature_title(feat), feat, feat))
+                        print("\t\t{} '{:0>16X}'({}) is invalid with the following errors:".format(entry.feature_title(feat), feat, feat))
                         print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
                         if args.verbose and stack:
                             print("\t\t\t" + stack.replace('\n', '\n\t\t\t'))

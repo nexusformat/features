@@ -804,14 +804,12 @@ class recipe:
 
         # Check we've got some stuff
         if len(self.entries) == 0:
-            raise RuntimeError("""
-        Error reading NXmxfile: {}
-          No NXmx entries in file
-
-        The following errors occurred:
-
-        {}
-      """.format(self.file.filename, "\n".join(self.errors)))
+            raise AssertionError("No NXmx entries in file")
+        
+        if len(self.errors) > 0:
+            raise AssertionError("\n".join(self.errors))
+        
+        return self.entries
 
 
 if __name__ == '__main__':
