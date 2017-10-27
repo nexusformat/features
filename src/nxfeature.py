@@ -132,60 +132,61 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--verbose", dest="verbose", help="Include full stacktraces of failures", action="store_true",
                         default=False)
     parser.add_argument("-x", "--xml", dest="xml", help="XML file to write the junit output to", default=None)
-    parser.add_argument("nexusfile", help="Nexus file to test")
+    parser.add_argument("nexusfile", help="Nexus file to test", nargs='*')
 
     args = parser.parse_args()
 
-    if args.feature:
-        try:
-            disco = SingleFeatureDiscoverer(args.nexusfile, int(args.feature, 16))
-        except:
-            print("The feature '{}' has not parsed correctly, exiting".format(args.feature))
-            sys.exit()
-    else:
-        if args.test:
-            disco = AllFeatureDiscoverer(args.nexusfile)
-        else:
-            disco = InsaneFeatureDiscoverer(args.nexusfile)
-
-    factory = JUnitFactory()
-    
     failed = False
-    for entry in disco.entries():
-        pass_list = []
-        fail_list = []
-
-        print("Entry \"{}\" appears to contain the following features (they validate correctly): ".format(entry.entrypath))
-        for feat in entry.features():
+    for file in args.nexusfile:
+        if args.feature:
             try:
-                response = entry.feature_response(feat)
-                pass_list.append((feat, response))
-                print("\t{} ({}) {}".format(entry.feature_title(feat), feat, response))
-            except AssertionError as ae:
-                fail_list.append((feat, type(ae).__name__, str(ae), None))
-            except Exception as e:
-                fail_list.append((feat, type(e).__name__, str(e), str(traceback.format_exc())))
+                disco = SingleFeatureDiscoverer(file, int(args.feature, 16))
+            except:
+                print("The feature '{}' has not parsed correctly, exiting".format(args.feature))
+                sys.exit()
+        else:
+            if args.test:
+                disco = AllFeatureDiscoverer(file)
+            else:
+                disco = InsaneFeatureDiscoverer(file)
 
-        output = str()
-        for feat, message in pass_list:
-            factory.add_test_case(feat, message)
+        factory = JUnitFactory()
 
-        if len(fail_list) > 0:
-            failed = True
-            print("\n\tThe following features failed to validate:")
-            for feat, error_type, message, stack in fail_list:
+        for entry in disco.entries():
+            pass_list = []
+            fail_list = []
+
+            print("Entry \"{}\" appears to contain the following features (they validate correctly): ".format(entry.entrypath))
+            for feat in entry.features():
                 try:
-                    print("\t\t{} ({}) is invalid with the following errors:".format(entry.feature_title(feat), feat))
-                    print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
-                    if args.verbose and stack:
-                        print("\t\t\t" + stack.replace('\n', '\n\t\t\t'))
-                    factory.add_test_case(entry.feature_title(feat), feat, error_type, message)
-                except:
-                    if args.verbose:
-                        print("\t\tFeature ({}) could not be found".format(feat))
-        print("\n")
-    if args.xml:
-        factory.write(args.xml)
+                    response = entry.feature_response(feat)
+                    pass_list.append((feat, response))
+                    print("\t{} ({}) {}".format(entry.feature_title(feat), feat, response))
+                except AssertionError as ae:
+                    fail_list.append((feat, type(ae).__name__, str(ae), None))
+                except Exception as e:
+                    fail_list.append((feat, type(e).__name__, str(e), str(traceback.format_exc())))
+
+            output = str()
+            for feat, message in pass_list:
+                factory.add_test_case(feat, message)
+
+            if len(fail_list) > 0:
+                failed = True
+                print("\n\tThe following features failed to validate:")
+                for feat, error_type, message, stack in fail_list:
+                    try:
+                        print("\t\t{} ({:0>16X})[{}] is invalid with the following errors:".format(entry.feature_title(feat), feat, feat))
+                        print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
+                        if args.verbose and stack:
+                            print("\t\t\t" + stack.replace('\n', '\n\t\t\t'))
+                        factory.add_test_case(entry.feature_title(feat), feat, error_type, message)
+                    except:
+                        if args.verbose:
+                            print("\t\tFeature ({}) could not be found".format(feat))
+            print("\n")
+        if args.xml:
+            factory.write(args.xml)
 
     # to fail on Travis, return non zero if fails
     sys.exit(int(failed))

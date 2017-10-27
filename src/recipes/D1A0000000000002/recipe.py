@@ -61,11 +61,11 @@ class NXciteVisitor(object):
 
     def _visit_NXcite(self, name, obj):
         if "NX_class" in obj.attrs.keys():
-            if obj.attrs["NX_class"] in ["NXcite"]:
-                citation = NXcitation(obj['description'][0],
-                                      obj['doi'][0],
-                                      obj['endnote'][0],
-                                      obj['bibtex'][0])
+            if str(obj.attrs["NX_class"], "utf-8") in ["NXcite"]:
+                citation = NXcitation(str(obj['description'][0], "utf-8"),
+                                      str(obj['doi'][0], "utf-8"),
+                                      str(obj['endnote'][0], "utf-8"),
+                                      str(obj['bibtex'][0], "utf-8"))
                 self.citation_manager.add_citation(citation)
 
     def get_citation_manager(self, nx_file, entry):
