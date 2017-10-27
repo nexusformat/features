@@ -18,7 +18,12 @@ read TITLE
 # request to webservice
 # encode proposer & title
 # check curl is there
-ID=`curl -s --data "proposer=$EMAIL&title=$TITLE" https://idregistry-nexusformat.rhcloud.com/ids/ | python -c "import sys, json; print json.load(sys.stdin)['id']"`
+ID=`curl -s --data "proposer=$EMAIL&title=$TITLE" https://hidden-springs-12500.herokuapp.com/ids/\?format=json | python -c "import sys, json; print(json.load(sys.stdin)['id'])"`
+
+if test `echo -n $ID | wc -c` -ne 16 ; then
+   echo Something went wrong. We did not get back an id in the expected format. Get support! >&1 
+   exit 1
+fi
 
 cat << EOF
 
@@ -28,7 +33,7 @@ EOF
 
 # create template
 DIR=src/recipes/$ID
-mkdir -p $DIR
+mkdir -p $DIR || ( echo cannot create directory for new feature >&2 ; exit 1)
 cd $DIR
 touch __init__.py
 sed -e s,@TITLE@,"$TITLE", -e s,@EMAIL@,"$EMAIL", < ../TEMPLATETEMPLATE/recipe.py > recipe.py
