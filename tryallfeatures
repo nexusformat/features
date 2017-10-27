@@ -6,7 +6,7 @@ for feature in $( cd src/recipes/ ; echo [0-9A-F]* ) ; do
     WORKING_FILES=
     for filename in examples/*.nxs; do 
         echo === "$filename" ===
-        if python src/nxfeature.py -f -v "$feature" "$filename" ; then
+        if python src/nxfeature.py -v -f "$feature" "$filename" ; then
            WORKING_FILES="$filename $WORKING_FILES"  
         fi	
     done
