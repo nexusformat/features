@@ -10,7 +10,7 @@ def find_class(nx_file, nx_class):
         nx_class = [nx_class]
     def visitor(name, obj):
         if "NX_class" in obj.attrs.keys():
-            if obj.attrs["NX_class"] in nx_class:
+            if obj.attrs["NX_class"].decode() in nx_class:
                 hits.append((name, obj))
 
     nx_file.visititems(visitor)
