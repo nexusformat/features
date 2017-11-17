@@ -25,7 +25,7 @@ class recipe:
         """
         Recipes need to implement this method and return information which
         is useful to a user and instructive to a person reading the code.
-        See some of the recommended examples for inspriration what to return.
+        See some of the recommended examples for inspiration what to return.
 
         :return: the essence of the information recorded in this feature
         """
