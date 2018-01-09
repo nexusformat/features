@@ -3,14 +3,45 @@ import numpy as np
 
 class NXoff_geometryExamples:
     """
-    Example code to go from OFF file to NeXus file (see add_shape_from_file method)
-    and from NeXus to OFF file (see output_shape_to_file).
+    Example code to go from OFF file to NeXus file (see add_shape_from_off_file method)
+    and from NeXus to OFF file (see output_shape_to_off_file).
 
     """
+
     def __init__(self, nx_off_group):
         self.nx_off_group = nx_off_group
 
-    def add_shape_from_file(self, filename, group, name):
+    def output_shape_to_off_file(self, filename):
+        """
+        Output the shape defined in an NXoff_geometry group to an OFF file
+
+        :param filename: Name for the OFF file to output
+        """
+        vertices = self.nx_off_group['vertices'][...]
+        faces = self.nx_off_group['faces'][...]
+        winding_order = self.nx_off_group['winding_order'][...]
+        number_of_vertices = len(vertices)
+        number_of_faces = len(faces) - 1
+        # According to OFF standard the number of edges must be present but does not need to be correct
+        number_of_edges = 0
+        with open(filename, 'wb') as off_file:
+            off_file.write('OFF\n'.encode('utf8'))
+            off_file.write('# NVertices NFaces NEdges\n'.encode('utf8'))
+            off_file.write('{} {} {}\n'.format(number_of_vertices, number_of_faces, number_of_edges).encode('utf8'))
+
+            off_file.write('# Vertices\n'.encode('utf8'))
+            np.savetxt(off_file, vertices, fmt='%f', delimiter=" ")
+
+            off_file.write('# Faces\n'.encode('utf8'))
+            previous_index = 0
+            for face in faces[1:]:
+                verts_in_face = winding_order[previous_index:face]
+                fmt_str = '{} ' * len(verts_in_face)
+                fmt_str = fmt_str[:-1] + '\n'
+                off_file.write(fmt_str.format(*verts_in_face).encode('utf8'))
+                previous_index = face
+
+    def add_shape_from_off_file(self, filename, group, name):
         """
         Add an NXoff_geometry shape definition from an OFF file
 
@@ -20,8 +51,13 @@ class NXoff_geometryExamples:
         :return: NXoff_geometry group
         """
         with open(filename) as off_file:
-            off_vertices, all_faces = self.parse_off_file(off_file)
-        return self.add_shape(group, name, off_vertices, all_faces)
+            off_vertices, off_faces = self.parse_off_file(off_file)
+        winding_order, faces = self.create_off_face_vertex_map(off_faces)
+        shape = self.add_nx_group(group, name, 'NXoff_geometry')
+        self.add_dataset(shape, 'vertices', np.array(off_vertices).astype('float32'), {'units': 'm'})
+        self.add_dataset(shape, 'winding_order', np.array(winding_order).astype('int32'))
+        self.add_dataset(shape, 'faces', np.array(faces).astype('int32'))
+        return shape
 
     @staticmethod
     def skip_comment_lines(off_file):
@@ -89,26 +125,6 @@ class NXoff_geometryExamples:
             for vertex_index in face[1:]:
                 winding_order.append(vertex_index)
         return winding_order, faces
-
-    def add_shape(self, group, name, vertices, off_faces, detector_faces=None):
-        """
-        Add an NXoff_geometry to define geometry in OFF-like format
-
-        :param group: Group to add the NXoff_geometry group to
-        :param name: Name of the NXoff_geometry group
-        :param vertices: 2D numpy array list of [x,y,z] coordinates of vertices
-        :param off_faces: OFF-style vertex indices for each face
-        :param detector_faces: Optional array or list of face number-detector id pairs
-        :return: NXoff_geometry group
-        """
-        winding_order, faces = self.create_off_face_vertex_map(off_faces)
-        shape = self.add_nx_group(group, name, 'NXoff_geometry')
-        self.add_dataset(shape, 'vertices', np.array(vertices).astype('float32'), {'units': 'm'})
-        self.add_dataset(shape, 'winding_order', np.array(winding_order).astype('int32'))
-        self.add_dataset(shape, 'faces', np.array(faces).astype('int32'))
-        if detector_faces is not None:
-            self.add_dataset(shape, 'detector_faces', np.array(detector_faces).astype('int32'))
-        return shape
 
     def parse_off_file(self, off_file):
         """
