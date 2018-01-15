@@ -36,9 +36,10 @@ class NXoff_geometryExamples:
             previous_index = 0
             for face in faces[1:]:
                 verts_in_face = winding_order[previous_index:face]
-                fmt_str = '{} ' * len(verts_in_face)
+                number_of_verts_in_face = len(verts_in_face)
+                fmt_str = '{} ' * (number_of_verts_in_face + 1)
                 fmt_str = fmt_str[:-1] + '\n'
-                off_file.write(fmt_str.format(*verts_in_face).encode('utf8'))
+                off_file.write(fmt_str.format(number_of_verts_in_face, *verts_in_face).encode('utf8'))
                 previous_index = face
 
     def add_shape_from_off_file(self, filename, group, name):
