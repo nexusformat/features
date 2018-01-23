@@ -277,12 +277,12 @@ class GeometryExamples:
         if faces is not None:
             faces = np.concatenate((faces, new_faces + winding_order.size))
         else:
-            faces = new_faces
+            faces = np.array(new_faces)
 
         if winding_order is not None:
             winding_order = np.concatenate((winding_order, new_winding_order + vertices.shape[0]))
         else:
-            winding_order = new_winding_order
+            winding_order = np.array(new_winding_order)
 
         if vertices is not None:
             vertices = np.vstack((vertices, new_vertices))
