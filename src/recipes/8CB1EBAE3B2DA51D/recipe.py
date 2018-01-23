@@ -11,10 +11,17 @@ class GeometryExamples:
 
     def __init__(self, nx_entry):
         self.nx_entry = nx_entry
+        self.vertices_per_cylinder = 10  # 10 corresponds to a pentagonal prism representation of a cylinder
 
     def output_shape_to_off_file(self, off_filename):
         """
         Output the complete geometry described in the given NXentry to a single OFF file
+
+        Nota Bene:
+        This function may have a long run time and high memory use for instruments with large geometry definitions,
+        particularly for instruments with many cylindrical pixels. The number of vertices in the OFF description
+        for cylinders (self.vertices_per_cylinder) has a strong impact on performance; it is recommended to start with
+        a low value of 10 and increase if run time and memory-use permit.
 
         :param off_filename: Name for the OFF file to output
         """
@@ -196,7 +203,8 @@ class GeometryExamples:
             radius = self.calculate_magnitude(vector_b - vector_a)
             centre = (vector_a + vector_c) * 0.5
 
-            mesh_vertices, mesh_faces = self.construct_cylinder_mesh(height, radius, unit_axis, centre, 10)
+            mesh_vertices, mesh_faces = self.construct_cylinder_mesh(height, radius, unit_axis, centre,
+                                                                     self.vertices_per_cylinder)
             new_winding_order, new_faces = self.create_off_face_vertex_map(mesh_faces)
             vertices, faces, winding_order = self.accumulate_geometry(vertices, faces, winding_order, mesh_vertices,
                                                                       new_faces, new_winding_order)
