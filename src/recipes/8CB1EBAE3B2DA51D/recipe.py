@@ -17,7 +17,7 @@ class GeometryExamples:
         """
         Output the complete geometry described in the given NXentry to a single OFF file
 
-        Nota Bene:
+        NB.
         This function may have a long run time and high memory use for instruments with large geometry definitions,
         particularly for instruments with many cylindrical pixels. The number of vertices in the OFF description
         for cylinders (self.vertices_per_cylinder) has a strong impact on performance; it is recommended to start with
