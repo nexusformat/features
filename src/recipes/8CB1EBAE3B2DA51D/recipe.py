@@ -1,46 +1,32 @@
 import numpy as np
 
 
-class NXoff_geometryExamples:
+class GeometryExamples:
     """
     Example code to go from OFF file to NeXus file (see add_shape_from_off_file method)
     and from NeXus to OFF file (see output_shape_to_off_file).
 
     """
+    def __init__(self, nx_entry):
+        self.nx_entry = nx_entry
 
-    def __init__(self, nx_off_group):
-        self.nx_off_group = nx_off_group
-
-    def output_shape_to_off_file(self, filename):
+    def output_shape_to_off_file(self, off_filename):
         """
         Output the shape defined in an NXoff_geometry group to an OFF file
 
         :param filename: Name for the OFF file to output
         """
-        vertices = self.nx_off_group['vertices'][...]
-        faces = self.nx_off_group['faces'][...]
-        winding_order = self.nx_off_group['winding_order'][...]
-        number_of_vertices = len(vertices)
-        number_of_faces = len(faces) - 1
-        # According to OFF standard the number of edges must be present but does not need to be correct
-        number_of_edges = 0
-        with open(filename, 'wb') as off_file:
-            off_file.write('OFF\n'.encode('utf8'))
-            off_file.write('# NVertices NFaces NEdges\n'.encode('utf8'))
-            off_file.write('{} {} {}\n'.format(number_of_vertices, number_of_faces, number_of_edges).encode('utf8'))
-
-            off_file.write('# Vertices\n'.encode('utf8'))
-            np.savetxt(off_file, vertices, fmt='%f', delimiter=" ")
-
-            off_file.write('# Faces\n'.encode('utf8'))
-            previous_index = 0
-            for face in faces[1:]:
-                verts_in_face = winding_order[previous_index:face]
-                number_of_verts_in_face = len(verts_in_face)
-                fmt_str = '{} ' * (number_of_verts_in_face + 1)
-                fmt_str = fmt_str[:-1] + '\n'
-                off_file.write(fmt_str.format(number_of_verts_in_face, *verts_in_face).encode('utf8'))
-                previous_index = face
+        geometry_groups = find_geometry_groups(self.nx_entry)
+        # Build up vertices, faces and winding order
+        vertices = None
+        faces = None
+        winding_order = None
+        for group in geometry_groups:
+            new_vertices, new_faces, new_winding_order = get_geometry_from_group(group, self.nx_entry)
+            vertices, faces, winding_order, next_vertex = accumulate_geometry(vertices, faces, winding_order,
+                                                                              new_vertices,
+                                                                              new_faces, new_winding_order)
+        write_off_file(off_filename, vertices, faces, winding_order)
 
     def add_shape_from_off_file(self, filename, group, name):
         """
@@ -155,37 +141,41 @@ class NXoff_geometryExamples:
         return off_vertices, all_faces
 
 
-class _NXoff_geometryFinder:
+def contains_valid_geometry_groups(nx_file, entry):
     """
-    Finds NXoff_geometry groups in the file
+    Determine if file and NXentry contains valid geometry information
+
+    :param nx_file: File to look in
+    :param entry: NXentry to look in
+    :return: True if file and NXentry contain geometry information
     """
 
-    def __init__(self):
-        self.hits = []
-
-    def _visit_NXoff_geometry(self, name, obj):
+    def _visit_group(name, obj):
         if "NX_class" in obj.attrs.keys():
-            if "NXoff_geometry" == str(obj.attrs["NX_class"], 'utf8'):
-                self.hits.append(obj)
+            if str(obj.attrs["NX_class"], 'utf8') in ["NXoff_geometry", "NXcylindrical_geometry"]:
+                validate(obj)
+                return True  # causes visititems to terminate
 
-    def get_NXoff_geometry(self, nx_file, entry):
-        self.hits = []
-        nx_file[entry].visititems(self._visit_NXoff_geometry)
-        return self.hits
+    return nx_file[entry].visititems(_visit_group) is True
 
 
-def validate(nx_off_geometry):
+def validate(nx_geometry):
     """
-    Checks that lengths of datasets which should be the same length as each other are.
+    Checks NXoff_geometry or NXcylindrical_geometry group has expected datasets.
 
-    :param nx_off_geometry: An NXoff_geometry group which was found in the file
+    :param nx_geometry: An NXoff_geometry or NXcylindrical group which was found in the file
     """
     fails = []
-    required_fields = ['vertices', 'winding_order', 'faces']
+    if str(nx_geometry.attrs["NX_class"], 'utf8') == "NXoff_geometry":
+        required_fields = ['vertices', 'winding_order', 'faces']
+        class_type = "NXoff_geometry"
+    else:
+        required_fields = ['vertices', 'cylinders']
+        class_type = "NXcylindrical_geometry"
     for field in required_fields:
-        if field not in nx_off_geometry:
+        if field not in nx_geometry:
             fails.append(
-                'NXoff_geometry group named ' + nx_off_geometry.name + ' should have "' + field + '" dataset')
+                class_type + ' group named ' + nx_geometry.name + ' should have "' + field + '" dataset')
 
     if len(fails) > 0:
         raise AssertionError('\n'.join(fails))
@@ -193,7 +183,7 @@ def validate(nx_off_geometry):
 
 class recipe:
     """
-    NXoff_geometry - examples converting between NeXus and OFF files
+    Geometry (NXoff_geometry, NXcylindrical_geometry) - examples convert between NeXus and OFF files
 
     Proposed by: matthew.d.jones@stfc.ac.uk
     """
@@ -207,7 +197,7 @@ class recipe:
         """
         self.file = filedesc
         self.entry = entrypath
-        self.title = "NXoff_geometry - examples converting between NeXus and OFF files"
+        self.title = "Geometry (NXoff_geometry, NXcylindrical_geometry) - examples convert between NeXus and OFF files"
 
     def process(self):
         """
@@ -217,13 +207,7 @@ class recipe:
 
         :return: the essence of the information recorded in this feature
         """
-        nx_off_finder = _NXoff_geometryFinder()
-        nx_off_list = nx_off_finder.get_NXoff_geometry(self.file, self.entry)
-        if len(nx_off_list) == 0:
-            raise AssertionError("No NXoff_geometry entries found")
-        examples = []
-        for nx_off_entry in nx_off_list:
-            validate(nx_off_entry)
-            examples.append(NXoff_geometryExamples(nx_off_entry))
-
-        return examples
+        if not contains_valid_geometry_groups(self.file, self.entry):
+            raise AssertionError("No valid geometry entries found")
+        else:
+            return GeometryExamples(self.entry)
