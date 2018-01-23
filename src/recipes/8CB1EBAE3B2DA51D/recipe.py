@@ -14,7 +14,7 @@ class GeometryExamples:
 
     def output_shape_to_off_file(self, off_filename):
         """
-        Output the shape defined in an NXoff_geometry group to an OFF file
+        Output the complete geometry described in the given NXentry to a single OFF file
 
         :param off_filename: Name for the OFF file to output
         """
@@ -25,9 +25,8 @@ class GeometryExamples:
         winding_order = None
         for group in geometry_groups:
             new_vertices, new_faces, new_winding_order = self.get_geometry_from_group(group)
-            vertices, faces, winding_order, next_vertex = self.accumulate_geometry(vertices, faces, winding_order,
-                                                                                   new_vertices,
-                                                                                   new_faces, new_winding_order)
+            vertices, faces, winding_order = self.accumulate_geometry(vertices, faces, winding_order, new_vertices,
+                                                                      new_faces, new_winding_order)
         self.write_off_file(off_filename, vertices, faces, winding_order)
 
     def add_shape_from_off_file(self, filename, group, name):
@@ -199,10 +198,8 @@ class GeometryExamples:
 
             mesh_vertices, mesh_faces = self.construct_cylinder_mesh(height, radius, unit_axis, centre, 10)
             new_winding_order, new_faces = self.create_off_face_vertex_map(mesh_faces)
-            vertices, faces, winding_order, next_vertex = self.accumulate_geometry(vertices, faces, winding_order,
-                                                                                   mesh_vertices,
-                                                                                   new_faces,
-                                                                                   new_winding_order)
+            vertices, faces, winding_order = self.accumulate_geometry(vertices, faces, winding_order, mesh_vertices,
+                                                                      new_faces, new_winding_order)
         return vertices, faces, winding_order
 
     def get_geometry_from_group(self, group):
@@ -229,10 +226,10 @@ class GeometryExamples:
         to find the shape of the whole detector panel.
 
         :param group: Geometry group and its parent group in a dictionary
-        :param vertices:
-        :param faces:
-        :param winding_order:
-        :return:
+        :param vertices: Vertices array for the original pixel
+        :param faces: Faces array for the original pixel
+        :param winding_order: Winding order array for the original pixel
+        :return: vertices, faces, winding_order for the geometry comprising all pixels
         """
         if group['geometry_group'].name.split('/')[-1] == "pixel_shape":
             x_offsets, y_offsets, z_offsets = self.get_pixel_offsets(group)
@@ -252,19 +249,15 @@ class GeometryExamples:
                 new_vertices = np.hstack((pixel_vertices[:, 0] + x_offsets[pixel_number],
                                           pixel_vertices[:, 1] + y_offsets[pixel_number],
                                           pixel_vertices[:, 2] + z_offsets[pixel_number]))
-                vertices, faces, winding_order, next_vertex = self.accumulate_geometry(vertices, faces, winding_order,
-                                                                                       new_vertices,
-                                                                                       pixel_faces, pixel_winding_order,
-                                                                                       next_indices)
+                vertices, faces, winding_order, next_vertex = \
+                    self.accumulate_geometry_in_prealloc_arrays(vertices, faces, winding_order, new_vertices,
+                                                                pixel_faces, pixel_winding_order, next_indices)
         return vertices, faces, winding_order
 
     @staticmethod
-    def accumulate_geometry(vertices, faces, winding_order, new_vertices, new_faces, new_winding_order,
-                            next_indices=None):
+    def accumulate_geometry(vertices, faces, winding_order, new_vertices, new_faces, new_winding_order):
         """
         Accumulate geometry from different groups in the NeXus file, or repeated pixels.
-        If next_indices are supplied then the arrays are assumed to be preallocated and new data are inserted
-        at the given index instead of concatenating with the accumulation arrays.
 
         :param vertices: Vertices array to accumulate in
         :param faces: Faces array to accumulate in
@@ -272,35 +265,50 @@ class GeometryExamples:
         :param new_vertices: (2D) New vertices to append/insert
         :param new_faces: (1D) New vertices to append
         :param new_winding_order: (1D) New winding_order to append
-        :param next_indices: Insert new data at these indices if supplied, otherwise append the data
         """
-        if next_indices is not None:
-            faces[next_indices['face']:(next_indices['face'] + len(new_faces))] = new_faces + next_indices[
-                'winding_order']
-
-            winding_order[next_indices['winding_order']:(next_indices['winding_order'] + len(new_winding_order))] = \
-                new_winding_order + next_indices['vertex']
-
-            vertices[next_indices['vertex']:(next_indices['vertex'] + new_vertices.shape[0]), :] = new_vertices
-
-            next_indices['face'] += len(new_faces)
-            next_indices['winding_order'] += len(new_winding_order)
-            next_indices['vertex'] += new_vertices.shape[0]
+        if faces is not None:
+            faces = np.concatenate((faces, new_faces + winding_order.size))
         else:
-            if faces is not None:
-                faces = np.concatenate((faces, new_faces + winding_order.size))
-            else:
-                faces = new_faces
+            faces = new_faces
 
-            if winding_order is not None:
-                winding_order = np.concatenate((winding_order, new_winding_order + vertices.shape[0]))
-            else:
-                winding_order = new_winding_order
+        if winding_order is not None:
+            winding_order = np.concatenate((winding_order, new_winding_order + vertices.shape[0]))
+        else:
+            winding_order = new_winding_order
 
-            if vertices is not None:
-                vertices = np.vstack((vertices, new_vertices))
-            else:
-                vertices = new_vertices
+        if vertices is not None:
+            vertices = np.vstack((vertices, new_vertices))
+        else:
+            vertices = new_vertices
+
+        return vertices, faces, winding_order
+
+    @staticmethod
+    def accumulate_geometry_in_prealloc_arrays(vertices, faces, winding_order, new_vertices, new_faces,
+                                               new_winding_order, next_indices):
+        """
+        Accumulate geometry from different groups in the NeXus file, or repeated pixels.
+        Arrays are assumed to be preallocated and new data are inserted at the given index instead.
+
+        :param vertices: Vertices array to accumulate in
+        :param faces: Faces array to accumulate in
+        :param winding_order: Winding order array to accumulate in
+        :param new_vertices: (2D) New vertices to append/insert
+        :param new_faces: (1D) New vertices to append
+        :param new_winding_order: (1D) New winding_order to append
+        :param next_indices: Insert new data at these indices
+        """
+        faces[next_indices['face']:(next_indices['face'] + len(new_faces))] = new_faces + next_indices[
+            'winding_order']
+
+        winding_order[next_indices['winding_order']:(next_indices['winding_order'] + len(new_winding_order))] = \
+            new_winding_order + next_indices['vertex']
+
+        vertices[next_indices['vertex']:(next_indices['vertex'] + new_vertices.shape[0]), :] = new_vertices
+
+        next_indices['face'] += len(new_faces)
+        next_indices['winding_order'] += len(new_winding_order)
+        next_indices['vertex'] += new_vertices.shape[0]
 
         return vertices, faces, winding_order, next_indices
 
@@ -568,10 +576,10 @@ class GeometryExamples:
         cross_prod = np.cross(vector_a, vector_b)
         unit_cross, mag_cross = self.normalise(cross_prod)
 
-        def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+        def is_close(a, b, rel_tol=1e-09, abs_tol=0.0):
             return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
-        if isclose(mag_cross, 0.0):
+        if is_close(mag_cross, 0.0):
             raise NotImplementedError('No unique solution for rotation axis in '
                                       'find_rotation_axis_and_angle_between_vectors()')
 
