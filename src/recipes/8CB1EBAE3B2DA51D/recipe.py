@@ -2,9 +2,9 @@ import h5py
 import numpy as np
 
 
-class GeometryExamples:
+class NeXusOFF:
     """
-    Example code to go from OFF file to NeXus file (see add_shape_from_off_file method)
+    Code to go from OFF file to NeXus file (see add_shape_from_off_file method)
     and from NeXus to OFF file (see output_shape_to_off_file).
 
     """
@@ -639,7 +639,7 @@ def validate(nx_geometry):
 
 class recipe:
     """
-    Geometry (NXoff_geometry, NXcylindrical_geometry) - examples convert between NeXus and OFF files
+    Geometrical Shape (NXoff_geometry, NXcylindrical_geometry) - extract OFF data (files) from NeXus
 
     Proposed by: matthew.d.jones@stfc.ac.uk
     """
@@ -653,7 +653,7 @@ class recipe:
         """
         self.file = filedesc
         self.entry = entrypath
-        self.title = "Geometry (NXoff_geometry, NXcylindrical_geometry) - examples convert between NeXus and OFF files"
+        self.title = "Geometrical Shape (NXoff_geometry, NXcylindrical_geometry) - extract OFF data (files) from NeXus"
 
     def process(self):
         """
@@ -666,4 +666,4 @@ class recipe:
         if not contains_valid_geometry_groups(self.file, self.entry):
             raise AssertionError("No valid geometry entries found")
         else:
-            return GeometryExamples(self.entry)
+            return NeXusOFF(self.entry)
