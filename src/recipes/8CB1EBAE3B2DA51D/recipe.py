@@ -667,3 +667,11 @@ class recipe:
             raise AssertionError("No valid geometry entries found")
         else:
             return NeXusOFF(self.entry)
+
+
+# This allows recipe.py to be run directly as a test/demonstration
+if __name__ == "__main__":
+    nx_file = h5py.File("../../../examples/example_nx_geometry.nxs", "r")
+    example = NeXusOFF(nx_file["raw_data_1"])
+    example.output_shape_to_off_file("example.off")
+    # example.off can be opened by CAD or 3D rendering software such as Geomview (http://www.geomview.org/)
