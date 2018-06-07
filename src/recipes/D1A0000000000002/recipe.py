@@ -75,12 +75,12 @@ class NXciteVisitor(object):
 
 class recipe:
     """
-        A demo recipe for finding the information associated with this demo feature.
+        This recipe recursively finds all NXcite classes in the entry and captures the information in them
 
-        This is meant to help consumers of this feature to understand how to implement
-        code that understands that feature (copy and paste of the code is allowed).
-        It also documents in what preference order (if any) certain things are evaluated
-        when finding the information.
+        By using this feature you can programmatically gather suggested refereneces for
+        the publication of the data of the NeXus file (entry) in question. This can give
+        credit to the instrument, special devices, algorithms, calibration methods, data
+        acquisition, treatment or analysis applications, etc.
     """
 
     def __init__(self, filedesc, entrypath):
