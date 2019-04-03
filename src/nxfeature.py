@@ -6,8 +6,8 @@ import importlib
 import sys
 import os
 
-RECIPIE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/recipes"
-sys.path.append(RECIPIE_DIR)
+RECIPE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/recipes"
+sys.path.append(RECIPE_DIR)
 
 
 class TestBody:
@@ -78,8 +78,7 @@ class InsaneFeatureDiscoverer:
                 if features.dtype == numpy.dtype("uint64"):
                     ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
-                print("no features in " + path)
-                pass
+                print("No features in {}".format(path))
         return ent
 
 
@@ -92,15 +91,14 @@ class AllFeatureDiscoverer:
         for entry in self.file.keys():
             try:
                 features = []
-                for feat in os.listdir(RECIPIE_DIR):
+                for feat in os.listdir(RECIPE_DIR):
                     try:
                         features.append(int(feat, 16))
                     except:
                         print("Could not parse feature with name {}".format(feat))
                 ent.append(InsaneEntryWithFeatures(self.file, entry, features))
             except:
-                print("no recipes in " + RECIPIE_DIR)
-                pass
+                print("No features in {}".format(RECIPE_DIR))
         return ent
 
 
@@ -116,7 +114,6 @@ class SingleFeatureDiscoverer:
                 ent.append(InsaneEntryWithFeatures(self.file, entry, [self.feature]))
             except:
                 print("Issues with parsing feature {}".format(self.feature))
-                pass
         return ent
 
 
@@ -167,7 +164,7 @@ if __name__ == '__main__':
                     fail_list.append((feat, type(e).__name__, str(e), str(traceback.format_exc())))
 
             output = str()
-            
+
             if len(pass_list) > 0:
                 print("\tThe following features are contained in this entry:")
                 for feat, message in pass_list:
@@ -180,9 +177,9 @@ if __name__ == '__main__':
                 for feat, error_type, message, stack in fail_list:
                     try:
                         print("\t\t{} '{:0>16X}'({}) is invalid with the following errors:".format(entry.feature_title(feat), feat, feat))
-                        print("\t\t\t" + message.replace('\n', '\n\t\t\t'))
+                        print("\t\t\t{}".format(message.replace('\n', '\n\t\t\t')))
                         if args.verbose and stack:
-                            print("\t\t\t" + stack.replace('\n', '\n\t\t\t'))
+                            print("\t\t\t{}".format(stack.replace('\n', '\n\t\t\t')))
                         factory.add_test_case(entry.feature_title(feat), feat, error_type, message)
                     except:
                         if args.verbose:
