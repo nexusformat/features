@@ -2,6 +2,30 @@ import h5py
 import numpy as np
 
 
+class Point:
+
+    _counter = 0
+
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+        Point._counter += 1
+        self.id = Point._counter
+
+    def point_string(self):
+        return " ".join([str(self.x), str(self.y), str(self.z)]) + "\n"
+
+
+class PointPairNode:
+    def __init__(self, front, back):
+
+        self.front = front
+        self.back = back
+        self.next = None
+
+
 class recipe:
     """
     Generate OFF files from the NXdisk_choppers that are present in the NeXus file.
@@ -50,10 +74,6 @@ class recipe:
     def find_y(radius, theta):
         return radius * np.sin(theta)
 
-    @staticmethod
-    def create_point_string(x, y, z):
-        return " ".join([str(x), str(y), str(z)]) + "\n"
-
     def generate_off_file(self, chopper):
         """
         Create an OFF file from a given chopper.
@@ -67,37 +87,32 @@ class recipe:
 
         off_points = ""
 
-        front_outer_points = []
-        back_outer_points = []
-
-        front_inner_points = []
-        back_inner_points = []
-
-        for slit_edge in slit_edges:
+        for slit_edge in slit_edges[1:]:
 
             x = self.find_x(radius, slit_edge)
-            y = self.find_x(radius, slit_edge)
+            y = self.find_y(radius, slit_edge)
 
-            front_outer_points += [self.create_point_string(x, y, self.z)]
-            back_outer_points += [self.create_point_string(x, y, -self.z)]
+            front_outer_point = Point(x, y, self.z)
+            back_outer_point = Point(x, y, -self.z)
+
+            pp = PointPairNode(front_outer_point, back_outer_point)
 
             x = self.find_x(slit_height, slit_edge)
-            y = self.find_x(slit_height, slit_edge)
+            y = self.find_y(slit_height, slit_edge)
 
-            front_inner_points += [self.create_point_string(x, y, self.z)]
-            back_inner_points += [self.create_point_string(x, y, -self.z)]
+            front_inner_point = Point(x, y, self.z)
+            back_inner_point = Point(x, y, -self.z)
 
             n_vertices += 4
 
             off_points += (
-                front_outer_points[-1]
-                + back_outer_points[-1]
-                + front_inner_points[-1]
-                + back_inner_points[-1]
+                front_outer_point.point_string()
+                + back_outer_point.point_string()
+                + front_inner_point.point_string()
+                + back_inner_point.point_string()
             )
 
-        off_file += str(len(front_outer_points)) + " 0 0\n" + off_points
-        print(off_file)
+        off_file += str(n_vertices) + " 0 0\n" + off_points
 
         return off_file
 
