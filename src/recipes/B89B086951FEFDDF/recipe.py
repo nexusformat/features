@@ -11,8 +11,8 @@ class Point:
         self.y = y
         self.z = z
 
-        Point._counter += 1
         self.id = Point._counter
+        Point._counter += 1
 
     def point_string(self):
         return " ".join([str(self.x), str(self.y), str(self.z)]) + "\n"
@@ -24,6 +24,51 @@ class PointPairNode:
         self.front = front
         self.back = back
         self.next = None
+
+
+class OFFFileCreator:
+    def __init__(self):
+
+        self.file = "OFF\n"
+        self.vertices = []
+        self.faces = []
+
+    def add_vertex(self, point):
+
+        self.vertices.append(point)
+
+    def add_face(self, points):
+
+        ids = [point.id for point in points]
+        self.faces.append(ids)
+
+    def add_number_string(self, numbers):
+
+        self.file += " ".join([str(num) for num in numbers]) + "\n"
+
+    def add_vertex_to_file(self, vertex):
+
+        self.file += vertex.point_string()
+
+    def add_face_to_file(self, face):
+
+        n_vertices = len(face)
+        self.add_number_string([n_vertices] + face)
+
+    def create_file(self):
+
+        n_vertices = len(self.vertices)
+        n_faces = len(self.faces)
+
+        self.add_number_string([n_vertices, n_faces, 0])
+
+        for vertex in self.vertices:
+            self.add_vertex_to_file(vertex)
+
+        for face in self.faces:
+            self.add_face_to_file(face)
+
+        return self.file
 
 
 class recipe:
@@ -68,53 +113,88 @@ class recipe:
 
     @staticmethod
     def find_x(radius, theta):
-        return radius * np.cos(theta)
+        return radius * np.cos(np.deg2rad(theta))
 
     @staticmethod
     def find_y(radius, theta):
-        return radius * np.sin(theta)
+        return radius * np.sin(np.deg2rad(theta))
+
+    def create_point_set(self, radius, slit_height, slit_edge):
+
+        outer_x = self.find_x(radius, slit_edge)
+        outer_y = self.find_y(radius, slit_edge)
+
+        print(outer_x)
+
+        outer_front_point = Point(outer_x, outer_y, self.z)
+        outer_back_point = Point(outer_x, outer_y, -self.z)
+
+        inner_x = self.find_x(slit_height, slit_edge)
+        inner_y = self.find_y(slit_height, slit_edge)
+
+        inner_front_point = Point(inner_x, inner_y, self.z)
+        inner_back_point = Point(inner_x, inner_y, -self.z)
+
+        return outer_front_point, outer_back_point, inner_front_point, inner_back_point
 
     def generate_off_file(self, chopper):
         """
         Create an OFF file from a given chopper.
         """
 
-        n_vertices = 0
+        off_creator = OFFFileCreator()
 
         radius, slit_height, slit_edges = self.get_chopper_data(chopper)
 
-        off_file = "OFF\n"
+        first_outer_front, first_outer_back, first_inner_front, first_inner_back = self.create_point_set(
+            radius, slit_height, slit_edges[0]
+        )
 
-        off_points = ""
+        off_creator.add_vertex(first_outer_front)
+        off_creator.add_vertex(first_outer_back)
+        off_creator.add_vertex(first_inner_front)
+        off_creator.add_vertex(first_inner_back)
 
-        for slit_edge in slit_edges[1:]:
+        off_creator.add_face(
+            [first_outer_front, first_outer_back, first_inner_back, first_inner_front]
+        )
 
-            x = self.find_x(radius, slit_edge)
-            y = self.find_y(radius, slit_edge)
+        prev_outer_front = first_outer_front
+        prev_outer_back = first_outer_back
+        prev_inner_front = first_inner_front
+        prev_inner_back = first_inner_back
 
-            front_outer_point = Point(x, y, self.z)
-            back_outer_point = Point(x, y, -self.z)
+        for i in range(len(slit_edges[1:])):
 
-            pp = PointPairNode(front_outer_point, back_outer_point)
-
-            x = self.find_x(slit_height, slit_edge)
-            y = self.find_y(slit_height, slit_edge)
-
-            front_inner_point = Point(x, y, self.z)
-            back_inner_point = Point(x, y, -self.z)
-
-            n_vertices += 4
-
-            off_points += (
-                front_outer_point.point_string()
-                + back_outer_point.point_string()
-                + front_inner_point.point_string()
-                + back_inner_point.point_string()
+            outer_front, outer_back, inner_front, inner_back = self.create_point_set(
+                radius, slit_height, slit_edges[i]
             )
 
-        off_file += str(n_vertices) + " 0 0\n" + off_points
+            off_creator.add_vertex(outer_front)
+            off_creator.add_vertex(outer_back)
+            off_creator.add_vertex(inner_front)
+            off_creator.add_vertex(inner_back)
 
-        return off_file
+            off_creator.add_face([outer_front, outer_back, inner_back, inner_front])
+
+            if i % 2:
+                off_creator.add_face(
+                    [prev_inner_front, prev_inner_back, inner_back, inner_front]
+                )
+            else:
+                off_creator.add_face(
+                    [prev_outer_front, prev_outer_back, outer_back, outer_front]
+                )
+
+            prev_outer_front = outer_front
+            prev_outer_back = outer_back
+            prev_inner_front = inner_front
+            prev_inner_back = inner_back
+
+        # off_creator.add_face([outer_front, outer_back, first_outer_back, first_outer_front])
+
+        file = off_creator.create_file()
+        print(file)
 
     def process(self):
         """
