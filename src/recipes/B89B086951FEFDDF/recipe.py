@@ -1,4 +1,3 @@
-import h5py
 import numpy as np
 
 
@@ -18,20 +17,14 @@ class Point:
         return " ".join([str(self.x), str(self.y), str(self.z)]) + "\n"
 
 
-class PointPairNode:
-    def __init__(self, front, back):
-
-        self.front = front
-        self.back = back
-        self.next = None
-
-
 class OFFFileCreator:
     def __init__(self):
 
         self.file = "OFF\n"
         self.vertices = []
         self.faces = []
+        self.front_vertices = []
+        self.back_vertices = []
 
     def add_vertex(self, point):
 
@@ -41,6 +34,14 @@ class OFFFileCreator:
 
         ids = [point.id for point in points]
         self.faces.append(ids)
+
+    def add_front_vertex(self, point):
+
+        self.front_vertices.append(point)
+
+    def add_back_vertex(self, point):
+
+        self.back_vertices.append(point)
 
     def add_number_string(self, numbers):
 
@@ -55,6 +56,11 @@ class OFFFileCreator:
         n_vertices = len(face)
         self.add_number_string([n_vertices] + face)
 
+    def add_front_or_back_face_to_file(self, vertices):
+
+        ids = [vertex.id for vertex in vertices]
+        self.add_face_to_file(ids)
+
     def create_file(self):
 
         n_vertices = len(self.vertices)
@@ -67,6 +73,9 @@ class OFFFileCreator:
 
         for face in self.faces:
             self.add_face_to_file(face)
+
+        # self.add_front_or_back_face_to_file(self.front_vertices)
+        # self.add_front_or_back_face_to_file(self.back_vertices)
 
         return self.file
 
@@ -150,10 +159,20 @@ class recipe:
             radius, slit_height, slit_edges[0]
         )
 
+        # off_creator.add_vertex(Point(0,0,self.z))
+        # off_creator.add_vertex(Point(0,0,-self.z))
+
         off_creator.add_vertex(first_outer_front)
         off_creator.add_vertex(first_outer_back)
         off_creator.add_vertex(first_inner_front)
         off_creator.add_vertex(first_inner_back)
+
+        """
+        off_creator.add_front_vertex(first_outer_front)
+        off_creator.add_front_vertex(first_inner_front)
+        off_creator.add_back_vertex(first_outer_back)
+        off_creator.add_back_vertex(first_inner_back)
+        """
 
         off_creator.add_face(
             [first_outer_front, first_outer_back, first_inner_back, first_inner_front]
@@ -164,7 +183,7 @@ class recipe:
         prev_inner_front = first_inner_front
         prev_inner_back = first_inner_back
 
-        for i in range(1, len(slit_edges[:])):
+        for i in range(1, len(slit_edges)):
 
             current_outer_front, current_outer_back, current_inner_front, current_inner_back = self.create_point_set(
                 radius, slit_height, slit_edges[i]
@@ -193,6 +212,12 @@ class recipe:
                         current_inner_front,
                     ]
                 )
+                """
+                off_creator.add_front_vertex(current_inner_front)
+                off_creator.add_front_vertex(current_outer_front)
+                off_creator.add_back_vertex(current_inner_back)
+                off_creator.add_back_vertex(current_outer_back)
+                """
             else:
                 off_creator.add_face(
                     [
@@ -200,6 +225,28 @@ class recipe:
                         prev_outer_back,
                         current_outer_back,
                         current_outer_front,
+                    ]
+                )
+                """
+                off_creator.add_front_vertex(current_outer_front)
+                off_creator.add_front_vertex(current_inner_front)
+                off_creator.add_back_vertex(current_outer_back)
+                off_creator.add_back_vertex(current_inner_back)
+                """
+                off_creator.add_face(
+                    [
+                        prev_inner_front,
+                        prev_outer_front,
+                        current_outer_front,
+                        current_inner_front,
+                    ]
+                )
+                off_creator.add_face(
+                    [
+                        prev_inner_back,
+                        prev_outer_back,
+                        current_outer_back,
+                        current_inner_back,
                     ]
                 )
 
@@ -215,6 +262,18 @@ class recipe:
                 first_outer_back,
                 first_outer_front,
             ]
+        )
+
+        off_creator.add_face(
+            [
+                current_inner_front,
+                current_outer_front,
+                first_outer_front,
+                first_inner_front,
+            ]
+        )
+        off_creator.add_face(
+            [current_inner_back, current_outer_back, first_outer_back, first_inner_back]
         )
 
         file = off_creator.create_file()
