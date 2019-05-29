@@ -164,34 +164,58 @@ class recipe:
         prev_inner_front = first_inner_front
         prev_inner_back = first_inner_back
 
-        for i in range(len(slit_edges[1:])):
+        for i in range(1, len(slit_edges[:])):
 
-            outer_front, outer_back, inner_front, inner_back = self.create_point_set(
+            current_outer_front, current_outer_back, current_inner_front, current_inner_back = self.create_point_set(
                 radius, slit_height, slit_edges[i]
             )
 
-            off_creator.add_vertex(outer_front)
-            off_creator.add_vertex(outer_back)
-            off_creator.add_vertex(inner_front)
-            off_creator.add_vertex(inner_back)
+            off_creator.add_vertex(current_outer_front)
+            off_creator.add_vertex(current_outer_back)
+            off_creator.add_vertex(current_inner_front)
+            off_creator.add_vertex(current_inner_back)
 
-            off_creator.add_face([outer_front, outer_back, inner_back, inner_front])
+            off_creator.add_face(
+                [
+                    current_outer_front,
+                    current_outer_back,
+                    current_inner_back,
+                    current_inner_front,
+                ]
+            )
 
             if i % 2:
                 off_creator.add_face(
-                    [prev_inner_front, prev_inner_back, inner_back, inner_front]
+                    [
+                        prev_inner_front,
+                        prev_inner_back,
+                        current_inner_back,
+                        current_inner_front,
+                    ]
                 )
             else:
                 off_creator.add_face(
-                    [prev_outer_front, prev_outer_back, outer_back, outer_front]
+                    [
+                        prev_outer_front,
+                        prev_outer_back,
+                        current_outer_back,
+                        current_outer_front,
+                    ]
                 )
 
-            prev_outer_front = outer_front
-            prev_outer_back = outer_back
-            prev_inner_front = inner_front
-            prev_inner_back = inner_back
+            prev_outer_front = current_outer_front
+            prev_outer_back = current_outer_back
+            prev_inner_front = current_inner_front
+            prev_inner_back = current_inner_back
 
-        # off_creator.add_face([outer_front, outer_back, first_outer_back, first_outer_front])
+        off_creator.add_face(
+            [
+                current_outer_front,
+                current_outer_back,
+                first_outer_back,
+                first_outer_front,
+            ]
+        )
 
         file = off_creator.create_file()
         print(file)
