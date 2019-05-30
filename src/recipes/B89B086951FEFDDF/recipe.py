@@ -27,7 +27,9 @@ class OFFFileCreator:
         self.faces = []
         self.z = z
 
-        self.file_name = "chopper_geometry" + str(OFFFileCreator._file_counter) + ".off"
+        self.file_name = (
+            "chopper_geometry_" + str(OFFFileCreator._file_counter) + ".off"
+        )
         OFFFileCreator._file_counter += 1
 
         if units == b"deg":
@@ -196,8 +198,7 @@ class recipe:
             prev_inner_front = current_inner_front
             prev_inner_back = current_inner_back
 
-        file = off_creator.write_file()
-        print(file)
+        off_creator.write_file()
 
     @staticmethod
     def ask_for_resolution():
@@ -253,7 +254,7 @@ class recipe:
         self.find_disk_choppers()
 
         if not self.choppers:
-            return "Unable to find disk choppers."
+            return "Unable to find disk choppers. No files created."
 
         else:
 
