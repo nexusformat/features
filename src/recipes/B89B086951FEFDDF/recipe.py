@@ -16,7 +16,7 @@ class Point:
 
 
 class OFFFileCreator:
-    def __init__(self):
+    def __init__(self, z, units):
 
         self.file = "OFF\n"
         self.vertices = []
@@ -24,6 +24,48 @@ class OFFFileCreator:
         self.faces = []
         self.front_vertices = []
         self.back_vertices = []
+        self.z = z
+        self.degrees = units == b"deg"
+
+    def find_x(self, radius, theta):
+        if self.degrees:
+            return radius * np.cos(np.deg2rad(theta))
+
+        return radius * np.cos(theta)
+
+    def find_y(self, radius, theta):
+        if self.degrees:
+            return radius * np.sin(np.deg2rad(theta))
+
+        return radius * np.sin(theta)
+
+    def create_mirrored_points(self, r, theta):
+
+        x = self.find_x(r, theta)
+        y = self.find_y(r, theta)
+
+        return Point(x, y, self.z), Point(x, y, -self.z)
+
+    def create_and_add_point_set(self, radius, slit_height, slit_edge):
+
+        outer_front_point, outer_back_point = self.create_mirrored_points(
+            radius, slit_edge
+        )
+        inner_front_point, inner_back_point = self.create_mirrored_points(
+            slit_height, slit_edge
+        )
+
+        self.add_vertex(outer_front_point)
+        self.add_vertex(outer_back_point)
+        self.add_vertex(inner_front_point)
+        self.add_vertex(inner_back_point)
+
+        return [
+            outer_front_point,
+            outer_back_point,
+            inner_front_point,
+            inner_back_point,
+        ]
 
     def add_vertex(self, point):
 
@@ -41,15 +83,7 @@ class OFFFileCreator:
         ids = [point.id for point in points]
         self.faces.append(ids)
 
-    def add_front_vertex(self, point):
-
-        self.front_vertices.append(point)
-
-    def add_back_vertex(self, point):
-
-        self.back_vertices.append(point)
-
-    def add_number_string(self, numbers):
+    def add_number_string_to_file(self, numbers):
 
         self.file += " ".join([str(num) for num in numbers]) + "\n"
 
@@ -60,14 +94,14 @@ class OFFFileCreator:
     def add_face_to_file(self, face):
 
         n_vertices = len(face)
-        self.add_number_string([n_vertices] + face)
+        self.add_number_string_to_file([n_vertices] + face)
 
     def create_file(self):
 
         n_vertices = len(self.vertices)
         n_faces = len(self.faces)
 
-        self.add_number_string([n_vertices, n_faces, 0])
+        self.add_number_string_to_file([n_vertices, n_faces, 0])
 
         for vertex in self.vertices:
             self.add_vertex_to_file(vertex)
@@ -99,7 +133,6 @@ class recipe:
 
         self.choppers = None
         self.resolution = 20
-        self.z = 50
 
     def find_disk_choppers(self):
         """
@@ -115,54 +148,22 @@ class recipe:
         radius = chopper["radius"][()]
         slit_height = chopper["slit_height"][()]
         slit_edges = chopper["slit_edges"][()]
+        units = chopper["slit_edges"].attrs["units"]
 
-        return radius, slit_height, slit_edges
-
-    @staticmethod
-    def find_x(radius, theta):
-        return radius * np.cos(np.deg2rad(theta))
-
-    @staticmethod
-    def find_y(radius, theta):
-        return radius * np.sin(np.deg2rad(theta))
-
-    def create_point_set(self, radius, slit_height, slit_edge):
-
-        outer_x = self.find_x(radius, slit_edge)
-        outer_y = self.find_y(radius, slit_edge)
-
-        outer_front_point = Point(outer_x, outer_y, self.z)
-        outer_back_point = Point(outer_x, outer_y, -self.z)
-
-        inner_x = self.find_x(slit_height, slit_edge)
-        inner_y = self.find_y(slit_height, slit_edge)
-
-        inner_front_point = Point(inner_x, inner_y, self.z)
-        inner_back_point = Point(inner_x, inner_y, -self.z)
-
-        return [
-            outer_front_point,
-            outer_back_point,
-            inner_front_point,
-            inner_back_point,
-        ]
+        return radius, slit_height, slit_edges, units
 
     def generate_off_file(self, chopper):
         """
         Create an OFF file from a given chopper.
         """
+        z = 50
+        radius, slit_height, slit_edges, units = self.get_chopper_data(chopper)
 
-        off_creator = OFFFileCreator()
+        off_creator = OFFFileCreator(z, units)
 
-        radius, slit_height, slit_edges = self.get_chopper_data(chopper)
-
-        point_set = self.create_point_set(radius, slit_height, slit_edges[0])
-
-        off_creator.add_vertex(Point(0, 0, self.z))
-        off_creator.add_vertex(Point(0, 0, -self.z))
-
-        off_creator.add_vertices(point_set)
-        off_creator.add_face(point_set)
+        point_set = off_creator.create_and_add_point_set(
+            radius, slit_height, slit_edges[0]
+        )
 
         prev_outer_front = first_outer_front = point_set[0]
         prev_outer_back = first_outer_back = point_set[1]
@@ -171,96 +172,20 @@ class recipe:
 
         for i in range(1, len(slit_edges)):
 
-            current_outer_front, current_outer_back, current_inner_front, current_inner_back = self.create_point_set(
+            current_outer_front, current_outer_back, current_inner_front, current_inner_back = off_creator.create_and_add_point_set(
                 radius, slit_height, slit_edges[i]
             )
 
-            off_creator.add_vertex(current_outer_front)
-            off_creator.add_vertex(current_outer_back)
-            off_creator.add_vertex(current_inner_front)
-            off_creator.add_vertex(current_inner_back)
-
-            off_creator.add_face(
-                [
-                    current_outer_front,
-                    current_outer_back,
-                    current_inner_back,
-                    current_inner_front,
-                ]
-            )
-
             if i % 2:
-                off_creator.add_face(
-                    [
-                        prev_inner_front,
-                        prev_inner_back,
-                        current_inner_back,
-                        current_inner_front,
-                    ]
-                )
-                """
-                off_creator.add_front_vertex(current_inner_front)
-                off_creator.add_front_vertex(current_outer_front)
-                off_creator.add_back_vertex(current_inner_back)
-                off_creator.add_back_vertex(current_outer_back)
-                """
+                pass
+
             else:
-                off_creator.add_face(
-                    [
-                        prev_outer_front,
-                        prev_outer_back,
-                        current_outer_back,
-                        current_outer_front,
-                    ]
-                )
-                """
-                off_creator.add_front_vertex(current_outer_front)
-                off_creator.add_front_vertex(current_inner_front)
-                off_creator.add_back_vertex(current_outer_back)
-                off_creator.add_back_vertex(current_inner_back)
-                """
-                off_creator.add_face(
-                    [
-                        prev_inner_front,
-                        prev_outer_front,
-                        current_outer_front,
-                        current_inner_front,
-                    ]
-                )
-                off_creator.add_face(
-                    [
-                        prev_inner_back,
-                        prev_outer_back,
-                        current_outer_back,
-                        current_inner_back,
-                    ]
-                )
+                pass
 
             prev_outer_front = current_outer_front
             prev_outer_back = current_outer_back
             prev_inner_front = current_inner_front
             prev_inner_back = current_inner_back
-
-        off_creator.add_face(
-            [
-                current_outer_front,
-                current_outer_back,
-                first_outer_back,
-                first_outer_front,
-            ]
-        )
-
-        off_creator.add_face(
-            [
-                current_inner_front,
-                current_outer_front,
-                first_outer_front,
-                first_inner_front,
-            ]
-        )
-        off_creator.add_face(
-            [current_inner_back, current_outer_back, first_outer_back, first_inner_back]
-        )
 
         file = off_creator.create_file()
         print(file)
