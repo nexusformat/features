@@ -2,16 +2,14 @@ import numpy as np
 
 
 class Point:
-
-    _counter = 0
-
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
+        self.id = 0
 
-        self.id = Point._counter
-        Point._counter += 1
+    def set_id(self, index):
+        self.id = index
 
     def point_string(self):
         return " ".join([str(self.x), str(self.y), str(self.z)]) + "\n"
@@ -22,13 +20,16 @@ class OFFFileCreator:
 
         self.file = "OFF\n"
         self.vertices = []
+        self.vertex_counter = 0
         self.faces = []
         self.front_vertices = []
         self.back_vertices = []
 
     def add_vertex(self, point):
 
+        point.set_id(self.vertex_counter)
         self.vertices.append(point)
+        self.vertex_counter += 1
 
     def add_face(self, points):
 
@@ -133,8 +134,6 @@ class recipe:
         outer_x = self.find_x(radius, slit_edge)
         outer_y = self.find_y(radius, slit_edge)
 
-        print(outer_x)
-
         outer_front_point = Point(outer_x, outer_y, self.z)
         outer_back_point = Point(outer_x, outer_y, -self.z)
 
@@ -159,20 +158,13 @@ class recipe:
             radius, slit_height, slit_edges[0]
         )
 
-        # off_creator.add_vertex(Point(0,0,self.z))
-        # off_creator.add_vertex(Point(0,0,-self.z))
+        off_creator.add_vertex(Point(0, 0, self.z))
+        off_creator.add_vertex(Point(0, 0, -self.z))
 
         off_creator.add_vertex(first_outer_front)
         off_creator.add_vertex(first_outer_back)
         off_creator.add_vertex(first_inner_front)
         off_creator.add_vertex(first_inner_back)
-
-        """
-        off_creator.add_front_vertex(first_outer_front)
-        off_creator.add_front_vertex(first_inner_front)
-        off_creator.add_back_vertex(first_outer_back)
-        off_creator.add_back_vertex(first_inner_back)
-        """
 
         off_creator.add_face(
             [first_outer_front, first_outer_back, first_inner_back, first_inner_front]
