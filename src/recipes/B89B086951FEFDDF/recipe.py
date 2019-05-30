@@ -46,6 +46,12 @@ class OFFFileCreator:
         return radius * self.sin(theta)
 
     def create_mirrored_points(self, r, theta):
+        """
+        Creates two points that share the same x and y values and have a different z value.
+        :param r: The distance between the points and their respective 'origins' ([0,0,+z] and [0,0,-z]).
+        :param theta: The angle of the points.
+        :return: Two points that have a distance of 2*z from each other.
+        """
 
         x = self.find_x(r, theta)
         y = self.find_y(r, theta)
@@ -65,6 +71,10 @@ class OFFFileCreator:
         self.add_vertex(outer_back_point)
         self.add_vertex(inner_front_point)
         self.add_vertex(inner_back_point)
+
+        self.add_face(
+            [inner_front_point, outer_front_point, outer_back_point, inner_back_point]
+        )
 
         return [
             outer_front_point,
@@ -156,7 +166,7 @@ class recipe:
     @staticmethod
     def get_chopper_data(chopper):
         """
-        Extract radius, slit_height, and slit_edges data from a given chopper group.
+        Extract radius, slit_height, slit_edges, and angle units data from a given chopper group.
         """
         radius = chopper["radius"][()]
         slit_height = chopper["slit_height"][()]
@@ -167,7 +177,7 @@ class recipe:
 
     def generate_off_file(self, chopper, resolution, width):
         """
-        Create an OFF file from a given chopper.
+        Create an OFF file from a given chopper and user-defined width and resolution values.
         """
 
         radius, slit_height, slit_edges, units = self.get_chopper_data(chopper)
