@@ -39,6 +39,11 @@ class OFFFileCreator:
             self.cos = lambda x: np.cos(x)
             self.sin = lambda x: np.sin(x)
 
+        self.front_centre = Point(0, 0, self.z)
+        self.add_vertex(self.front_centre)
+        self.back_centre = Point(0, 0, -self.z)
+        self.add_vertex(self.back_centre)
+
     def find_x(self, radius, theta):
         return radius * self.cos(theta)
 
@@ -82,6 +87,20 @@ class OFFFileCreator:
             inner_front_point,
             inner_back_point,
         ]
+
+    def create_and_add_mirrored_points(self, r, theta):
+
+        front, back = self.create_mirrored_points(r, theta)
+        self.add_vertex(front)
+        self.add_vertex(back)
+
+        return front, back
+
+    def add_face_connected_to_front_centre(self, points):
+        self.add_face([self.front_centre] + points)
+
+    def add_face_connected_to_back_centre(self, points):
+        self.add_face([self.back_centre] + points)
 
     def add_vertex(self, point):
 
@@ -193,17 +212,81 @@ class recipe:
         prev_inner_front = first_inner_front = point_set[2]
         prev_inner_back = first_inner_back = point_set[3]
 
+        resolution_angles = np.linspace(0, 360, resolution)
+
         for i in range(1, len(slit_edges)):
 
             current_outer_front, current_outer_back, current_inner_front, current_inner_back = off_creator.create_and_add_point_set(
                 radius, slit_height, slit_edges[i]
             )
 
+            intermediate_angles = resolution_angles[
+                (resolution_angles > slit_edges[i - 1])
+                & (resolution_angles < slit_edges[i])
+            ]
+            # print(intermediate_angles)
+
             if i % 2:
-                pass
+
+                prev_front = prev_inner_front
+                prev_back = prev_inner_back
+
+                for angle in intermediate_angles:
+
+                    current_front, current_back = off_creator.create_and_add_mirrored_points(
+                        slit_height, angle
+                    )
+                    off_creator.add_face(
+                        [prev_front, prev_back, current_back, current_front]
+                    )
+                    off_creator.add_face_connected_to_front_centre(
+                        [prev_front, current_front]
+                    )
+                    off_creator.add_face_connected_to_back_centre(
+                        [prev_back, current_back]
+                    )
+                    prev_front = current_front
+                    prev_back = current_back
+
+                off_creator.add_face(
+                    [prev_front, prev_back, current_inner_back, current_inner_front]
+                )
+                off_creator.add_face_connected_to_front_centre(
+                    [prev_front, current_inner_front]
+                )
+                off_creator.add_face_connected_to_back_centre(
+                    [prev_back, current_inner_back]
+                )
 
             else:
-                pass
+                prev_front = prev_outer_front
+                prev_back = prev_outer_back
+
+                for angle in intermediate_angles:
+                    current_front, current_back = off_creator.create_and_add_mirrored_points(
+                        radius, angle
+                    )
+                    off_creator.add_face(
+                        [prev_front, prev_back, current_back, current_front]
+                    )
+                    off_creator.add_face_connected_to_front_centre(
+                        [prev_front, current_front]
+                    )
+                    off_creator.add_face_connected_to_back_centre(
+                        [prev_back, current_back]
+                    )
+                    prev_front = current_front
+                    prev_back = current_back
+
+                off_creator.add_face(
+                    [prev_front, prev_back, current_outer_back, current_outer_front]
+                )
+                off_creator.add_face_connected_to_front_centre(
+                    [prev_front, current_outer_front]
+                )
+                off_creator.add_face_connected_to_back_centre(
+                    [prev_back, current_outer_back]
+                )
 
             prev_outer_front = current_outer_front
             prev_outer_back = current_outer_back
