@@ -16,13 +16,19 @@ class Point:
 
 
 class OFFFileCreator:
+
+    _file_counter = 0
+
     def __init__(self, z, units):
 
-        self.file = "OFF\n"
+        self.file_contents = "OFF\n"
         self.vertices = []
         self.vertex_counter = 0
         self.faces = []
         self.z = z
+
+        self.file_name = "chopper_geometry" + str(OFFFileCreator._file_counter) + ".off"
+        OFFFileCreator._file_counter += 1
 
         if units == b"deg":
             self.cos = lambda x: np.cos(np.deg2rad(x))
@@ -83,18 +89,18 @@ class OFFFileCreator:
 
     def add_number_string_to_file(self, numbers):
 
-        self.file += " ".join([str(num) for num in numbers]) + "\n"
+        self.file_contents += " ".join([str(num) for num in numbers]) + "\n"
 
     def add_vertex_to_file(self, vertex):
 
-        self.file += vertex.point_string()
+        self.file_contents += vertex.point_string()
 
     def add_face_to_file(self, face):
 
         n_vertices = len(face)
         self.add_number_string_to_file([n_vertices] + face)
 
-    def create_file(self):
+    def create_file_string(self):
 
         n_vertices = len(self.vertices)
         n_faces = len(self.faces)
@@ -107,7 +113,12 @@ class OFFFileCreator:
         for face in self.faces:
             self.add_face_to_file(face)
 
-        return self.file
+    def write_file(self):
+
+        self.create_file_string()
+
+        with open(self.file_name, "w") as f:
+            f.write(self.file_contents)
 
 
 class recipe:
@@ -150,7 +161,7 @@ class recipe:
 
         return radius, slit_height, slit_edges, units
 
-    def generate_off_file(self, chopper, width):
+    def generate_off_file(self, chopper, resolution, width):
         """
         Create an OFF file from a given chopper.
         """
@@ -185,10 +196,11 @@ class recipe:
             prev_inner_front = current_inner_front
             prev_inner_back = current_inner_back
 
-        file = off_creator.create_file()
+        file = off_creator.write_file()
         print(file)
 
-    def ask_for_resolution(self):
+    @staticmethod
+    def ask_for_resolution():
 
         while True:
 
@@ -209,7 +221,8 @@ class recipe:
             except ValueError:
                 print("Could not convert " + res + " to an int. Please try again.")
 
-    def ask_for_width(self):
+    @staticmethod
+    def ask_for_width():
 
         while True:
 
@@ -248,4 +261,5 @@ class recipe:
             width = self.ask_for_width()
 
             for chopper in self.choppers:
+
                 self.generate_off_file(chopper, resolution, width)
