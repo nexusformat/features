@@ -150,14 +150,14 @@ class recipe:
 
         return radius, slit_height, slit_edges, units
 
-    def generate_off_file(self, chopper):
+    def generate_off_file(self, chopper, width):
         """
         Create an OFF file from a given chopper.
         """
-        z = 50
+
         radius, slit_height, slit_edges, units = self.get_chopper_data(chopper)
 
-        off_creator = OFFFileCreator(z, units)
+        off_creator = OFFFileCreator(width * 0.5, units)
 
         point_set = off_creator.create_and_add_point_set(
             radius, slit_height, slit_edges[0]
@@ -188,6 +188,46 @@ class recipe:
         file = off_creator.create_file()
         print(file)
 
+    def ask_for_resolution(self):
+
+        while True:
+
+            res = input("Enter a resolution value: ")
+
+            try:
+                res = int(res)
+
+                if res > 0:
+                    return res
+                else:
+                    print(
+                        "Resolution value "
+                        + str(res)
+                        + " is too small. Please try again."
+                    )
+
+            except ValueError:
+                print("Could not convert " + res + " to an int. Please try again.")
+
+    def ask_for_width(self):
+
+        while True:
+
+            width = input("Enter a width: ")
+
+            try:
+                width = float(width)
+
+                if width > 0:
+                    return width * 0.25
+                else:
+                    print(
+                        "Width value " + str(width) + " is too small. Please try again."
+                    )
+
+            except ValueError:
+                print("Could not convert " + width + " to a float. Please try again.")
+
     def process(self):
         """
         Recipes need to implement this method and return information which
@@ -204,5 +244,8 @@ class recipe:
 
         else:
 
+            resolution = self.ask_for_resolution()
+            width = self.ask_for_width()
+
             for chopper in self.choppers:
-                self.generate_off_file(chopper)
+                self.generate_off_file(chopper, resolution, width)
