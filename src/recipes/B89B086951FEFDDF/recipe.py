@@ -22,22 +22,20 @@ class OFFFileCreator:
         self.vertices = []
         self.vertex_counter = 0
         self.faces = []
-        self.front_vertices = []
-        self.back_vertices = []
         self.z = z
-        self.degrees = units == b"deg"
+
+        if units == b"deg":
+            self.cos = lambda x: np.cos(np.deg2rad(x))
+            self.sin = lambda x: np.sin(np.deg2rad(x))
+        else:
+            self.cos = lambda x: np.cos(x)
+            self.sin = lambda x: np.sin(x)
 
     def find_x(self, radius, theta):
-        if self.degrees:
-            return radius * np.cos(np.deg2rad(theta))
-
-        return radius * np.cos(theta)
+        return radius * self.cos(theta)
 
     def find_y(self, radius, theta):
-        if self.degrees:
-            return radius * np.sin(np.deg2rad(theta))
-
-        return radius * np.sin(theta)
+        return radius * self.sin(theta)
 
     def create_mirrored_points(self, r, theta):
 
