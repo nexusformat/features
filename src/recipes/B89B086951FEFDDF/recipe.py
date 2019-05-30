@@ -31,6 +31,11 @@ class OFFFileCreator:
         self.vertices.append(point)
         self.vertex_counter += 1
 
+    def add_vertices(self, points):
+
+        for point in points:
+            self.add_vertex(point)
+
     def add_face(self, points):
 
         ids = [point.id for point in points]
@@ -57,11 +62,6 @@ class OFFFileCreator:
         n_vertices = len(face)
         self.add_number_string([n_vertices] + face)
 
-    def add_front_or_back_face_to_file(self, vertices):
-
-        ids = [vertex.id for vertex in vertices]
-        self.add_face_to_file(ids)
-
     def create_file(self):
 
         n_vertices = len(self.vertices)
@@ -74,9 +74,6 @@ class OFFFileCreator:
 
         for face in self.faces:
             self.add_face_to_file(face)
-
-        # self.add_front_or_back_face_to_file(self.front_vertices)
-        # self.add_front_or_back_face_to_file(self.back_vertices)
 
         return self.file
 
@@ -143,7 +140,12 @@ class recipe:
         inner_front_point = Point(inner_x, inner_y, self.z)
         inner_back_point = Point(inner_x, inner_y, -self.z)
 
-        return outer_front_point, outer_back_point, inner_front_point, inner_back_point
+        return [
+            outer_front_point,
+            outer_back_point,
+            inner_front_point,
+            inner_back_point,
+        ]
 
     def generate_off_file(self, chopper):
         """
@@ -154,26 +156,18 @@ class recipe:
 
         radius, slit_height, slit_edges = self.get_chopper_data(chopper)
 
-        first_outer_front, first_outer_back, first_inner_front, first_inner_back = self.create_point_set(
-            radius, slit_height, slit_edges[0]
-        )
+        point_set = self.create_point_set(radius, slit_height, slit_edges[0])
 
         off_creator.add_vertex(Point(0, 0, self.z))
         off_creator.add_vertex(Point(0, 0, -self.z))
 
-        off_creator.add_vertex(first_outer_front)
-        off_creator.add_vertex(first_outer_back)
-        off_creator.add_vertex(first_inner_front)
-        off_creator.add_vertex(first_inner_back)
+        off_creator.add_vertices(point_set)
+        off_creator.add_face(point_set)
 
-        off_creator.add_face(
-            [first_outer_front, first_outer_back, first_inner_back, first_inner_front]
-        )
-
-        prev_outer_front = first_outer_front
-        prev_outer_back = first_outer_back
-        prev_inner_front = first_inner_front
-        prev_inner_back = first_inner_back
+        prev_outer_front = first_outer_front = point_set[0]
+        prev_outer_back = first_outer_back = point_set[1]
+        prev_inner_front = first_inner_front = point_set[2]
+        prev_inner_back = first_inner_back = point_set[3]
 
         for i in range(1, len(slit_edges)):
 
