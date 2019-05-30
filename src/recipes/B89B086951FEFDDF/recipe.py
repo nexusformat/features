@@ -122,6 +122,8 @@ class OFFFileCreator:
         with open(self.file_name, "w") as f:
             f.write(self.file_contents)
 
+        return self.file_name
+
 
 class recipe:
     """
@@ -198,7 +200,7 @@ class recipe:
             prev_inner_front = current_inner_front
             prev_inner_back = current_inner_back
 
-        off_creator.write_file()
+        return off_creator.write_file()
 
     @staticmethod
     def ask_for_resolution():
@@ -261,6 +263,12 @@ class recipe:
             resolution = self.ask_for_resolution()
             width = self.ask_for_width()
 
+            output_file_names = []
+
             for chopper in self.choppers:
 
-                self.generate_off_file(chopper, resolution, width)
+                output_file_names.append(
+                    self.generate_off_file(chopper, resolution, width)
+                )
+
+            print("Successfully created file(s): " + ", ".join(output_file_names))
