@@ -175,6 +175,7 @@ class recipe:
 
         self.choppers = None
         self.resolution = 20
+        self.resolution_angles = None
 
     def find_disk_choppers(self):
         """
@@ -194,7 +195,7 @@ class recipe:
 
         return radius, slit_height, slit_edges, units
 
-    def create_intermediate_points(
+    def create_intermediate_points_and_faces(
         self,
         off_creator,
         first_angle,
@@ -216,8 +217,6 @@ class recipe:
                 self.resolution_angles[(self.resolution_angles > first_angle)],
                 self.resolution_angles[(self.resolution_angles < second_angle)],
             )
-
-            print(intermediate_angles)
 
         prev_front = first_front
         prev_back = first_back
@@ -252,10 +251,10 @@ class recipe:
 
         prev_outer_front = first_outer_front = point_set[0]
         prev_outer_back = first_outer_back = point_set[1]
-        prev_inner_front = first_inner_front = point_set[2]
-        prev_inner_back = first_inner_back = point_set[3]
+        prev_inner_front = point_set[2]
+        prev_inner_back = point_set[3]
 
-        self.resolution_angles = np.linspace(0, 360, resolution)
+        self.resolution_angles = np.linspace(0, 360, resolution + 1)[1:]
 
         for i in range(1, len(slit_edges)):
 
@@ -264,7 +263,7 @@ class recipe:
             )
 
             if i % 2:
-                self.create_intermediate_points(
+                self.create_intermediate_points_and_faces(
                     off_creator,
                     slit_edges[i - 1],
                     slit_edges[i],
@@ -275,7 +274,7 @@ class recipe:
                     slit_height,
                 )
             else:
-                self.create_intermediate_points(
+                self.create_intermediate_points_and_faces(
                     off_creator,
                     slit_edges[i - 1],
                     slit_edges[i],
@@ -291,7 +290,7 @@ class recipe:
             prev_inner_front = current_inner_front
             prev_inner_back = current_inner_back
 
-        self.create_intermediate_points(
+        self.create_intermediate_points_and_faces(
             off_creator,
             slit_edges[-1],
             slit_edges[0],
