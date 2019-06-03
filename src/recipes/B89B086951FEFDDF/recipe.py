@@ -19,7 +19,7 @@ class OFFFileCreator:
 
     _file_counter = 0
 
-    def __init__(self, z, units):
+    def __init__(self, z):
 
         self.file_contents = "OFF\n"
         self.vertices = []
@@ -32,23 +32,16 @@ class OFFFileCreator:
         )
         OFFFileCreator._file_counter += 1
 
-        if units == b"deg":
-            self.cos = lambda x: np.cos(np.deg2rad(x))
-            self.sin = lambda x: np.sin(np.deg2rad(x))
-        else:
-            self.cos = lambda x: np.cos(x)
-            self.sin = lambda x: np.sin(x)
-
         self.front_centre = Point(0, 0, self.z)
         self.add_vertex(self.front_centre)
         self.back_centre = Point(0, 0, -self.z)
         self.add_vertex(self.back_centre)
 
     def find_x(self, radius, theta):
-        return radius * self.cos(theta)
+        return radius * np.cos(theta)
 
     def find_y(self, radius, theta):
-        return radius * self.sin(theta)
+        return radius * np.sin(theta)
 
     def create_mirrored_points(self, r, theta):
         """
@@ -241,10 +234,15 @@ class recipe:
         Create an OFF file from a given chopper and user-defined width and resolution values.
         """
 
+        # Obtain the radius, slit height, slit angles, and units from the chopper data
         radius, slit_height, slit_edges, units = self.get_chopper_data(chopper)
 
-        off_creator = OFFFileCreator(width * 0.5, units)
+        if units == b"deg":
+            slit_edges = [np.deg2rad(x) for x in slit_edges]
 
+        off_creator = OFFFileCreator(width * 0.5)
+
+        # Create four points for the first slit in the chopper data
         point_set = off_creator.create_and_add_point_set(
             radius, slit_height, slit_edges[0]
         )
@@ -254,7 +252,8 @@ class recipe:
         prev_inner_front = point_set[2]
         prev_inner_back = point_set[3]
 
-        self.resolution_angles = np.linspace(0, 360, resolution + 1)[1:]
+        # Remove the first angle to avoid creating a points at angle 0 and at angle 360
+        self.resolution_angles = np.linspace(0, 2 * np.pi, resolution + 1)[1:]
 
         for i in range(1, len(slit_edges)):
 
