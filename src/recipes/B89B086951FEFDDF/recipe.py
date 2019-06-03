@@ -246,6 +246,8 @@ class recipe:
     Proposed by: dolica.akello-egwel@stfc.ac.uk
     """
 
+    TWO_PI = np.pi * 2
+
     def __init__(self, filedesc, entrypath):
         """
         Recipes are required to set a descriptive self.title
@@ -355,7 +357,7 @@ class recipe:
 
         # Convert the slit edges to radians if they're in degrees
         if units == b"deg":
-            slit_edges = [np.deg2rad(x) for x in slit_edges]
+            slit_edges = [np.deg2rad(x) % recipe.TWO_PI for x in slit_edges]
 
         off_creator = OFFFileCreator(width * 0.5)
 
@@ -370,7 +372,7 @@ class recipe:
         prev_lower_back = point_set[3]
 
         # Remove the first angle to avoid creating duplicate points at angle 0 and at angle 360
-        self.resolution_angles = np.linspace(0, 2 * np.pi, resolution + 1)[1:]
+        self.resolution_angles = np.linspace(0, recipe.TWO_PI, resolution + 1)[1:]
 
         for i in range(1, len(slit_edges)):
 
