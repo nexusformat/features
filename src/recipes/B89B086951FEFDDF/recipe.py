@@ -167,7 +167,13 @@ class recipe:
         self.title = "Create an OFF file from an NXdisk_chopper"
 
         self.choppers = None
-        self.resolution = 20
+
+        # Number of times the chopper bends over the interval from 0 to 360 degrees (excluding slit boundaries)
+        self.resolution = 25
+
+        # The width of the disk chopper
+        self.width = 300
+
         self.resolution_angles = None
 
     def find_disk_choppers(self):
@@ -302,48 +308,6 @@ class recipe:
 
         return off_creator.write_file()
 
-    @staticmethod
-    def ask_for_resolution():
-
-        while True:
-
-            res = input("Enter a resolution value: ")
-
-            try:
-                res = int(res)
-
-                if res > 0:
-                    return res
-                else:
-                    print(
-                        "Resolution value "
-                        + str(res)
-                        + " is too small. Please try again."
-                    )
-
-            except ValueError:
-                print("Could not convert " + res + " to an int. Please try again.")
-
-    @staticmethod
-    def ask_for_width():
-
-        while True:
-
-            width = input("Enter a width: ")
-
-            try:
-                width = float(width)
-
-                if width > 0:
-                    return width * 0.25
-                else:
-                    print(
-                        "Width value " + str(width) + " is too small. Please try again."
-                    )
-
-            except ValueError:
-                print("Could not convert " + width + " to a float. Please try again.")
-
     def process(self):
         """
         Recipes need to implement this method and return information which
@@ -360,15 +324,12 @@ class recipe:
 
         else:
 
-            resolution = self.ask_for_resolution()
-            width = self.ask_for_width()
-
             output_file_names = []
 
             for chopper in self.choppers:
 
                 output_file_names.append(
-                    self.generate_off_file(chopper, resolution, width)
+                    self.generate_off_file(chopper, self.resolution, self.width)
                 )
 
             print("Successfully created file(s): " + ", ".join(output_file_names))
