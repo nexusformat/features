@@ -23,7 +23,6 @@ class Point:
         """
         Create a string from the point coordinates to that it can be placed in the OFF file.
         """
-
         return " ".join([str(self.x), str(self.y), str(self.z)]) + "\n"
 
 
@@ -37,7 +36,7 @@ class OFFFileCreator:
     def __init__(self, z):
 
         self.file_contents = "OFF\n"
-        self.vertices = []
+        self.points = []
         self.faces = []
         self.z = z
 
@@ -46,24 +45,39 @@ class OFFFileCreator:
         )
         OFFFileCreator._file_counter += 1
 
+        # Create points for the front and back centres of the disk
         self.front_centre = Point(0, 0, self.z)
-        self.add_vertex_to_list(self.front_centre)
         self.back_centre = Point(0, 0, -self.z)
-        self.add_vertex_to_list(self.back_centre)
+
+        # Add the front and back centre points to the lists of points
+        self.add_point_to_list(self.front_centre)
+        self.add_point_to_list(self.back_centre)
 
     @staticmethod
-    def find_x(radius, theta):
-        return radius * np.cos(theta)
+    def find_x(r, theta):
+        """
+        Find the x coordinate of a point given r and theta.
+        :param r: The distance between the point and the origin.
+        :param theta: The angle of the point in radians.
+        :return: The x coordinate of the point.
+        """
+        return r * np.cos(theta)
 
     @staticmethod
-    def find_y(radius, theta):
-        return radius * np.sin(theta)
+    def find_y(r, theta):
+        """
+        Find the y coordinate of a point given r and theta.
+        :param r: The distance between the point and the origin.
+        :param theta: The angle of the point in radians.
+        :return: The y coordinate of the point.
+        """
+        return r * np.sin(theta)
 
     def create_mirrored_points(self, r, theta):
         """
-        Creates two points that share the same x and y values and have a different z value.
-        :param r: The distance between the points and their respective 'origins' ([0,0,+z] and [0,0,-z]).
-        :param theta: The angle of the points.
+        Creates two points that share the same x and y values and have opposite z values.
+        :param r: The distance between the points and the front/back centre of the disk chopper.
+        :param theta: The angle between the point and the front/back centre.
         :return: Two points that have a distance of 2*z from each other.
         """
 
@@ -74,14 +88,15 @@ class OFFFileCreator:
 
     def create_and_add_point_set(self, radius, slit_height, slit_edge):
         """
-        Creates the upper and lower points for a slit edge and adds these to the OFF file. Also adds the face made from
-        all four points to the OFF file.
+        Creates and records the upper and lower points for a slit edge and adds these to the file string. Also adds the face made
+        from all four points to the file string.
         :param radius: The radius of the disk chopper.
         :param slit_height: The height of the slit.
         :param slit_edge: The angle of the slit in radians.
-        :return: The Point objects for the four vertices with the same angle.
+        :return: A list containing point objects for the four points in the chopper mesh with an angle of `slit_height`.
         """
 
+        # Create the upper and lower points for the opening/closing slit edge.
         upper_front_point, upper_back_point = self.create_mirrored_points(
             radius, slit_edge
         )
@@ -89,11 +104,13 @@ class OFFFileCreator:
             slit_height, slit_edge
         )
 
-        self.add_vertex_to_list(upper_front_point)
-        self.add_vertex_to_list(upper_back_point)
-        self.add_vertex_to_list(lower_front_point)
-        self.add_vertex_to_list(lower_back_point)
+        # Add all of the points to the list of points.
+        self.add_point_to_list(upper_front_point)
+        self.add_point_to_list(upper_back_point)
+        self.add_point_to_list(lower_front_point)
+        self.add_point_to_list(lower_back_point)
 
+        # Create a face for the slit edge that contains all four points.
         self.add_face_to_list(
             [lower_front_point, upper_front_point, upper_back_point, lower_back_point]
         )
@@ -107,43 +124,43 @@ class OFFFileCreator:
 
     def create_and_add_mirrored_points(self, r, theta):
         """
-        Creates two mirrored points and adds these to the list of vertices.
+        Creats and records two mirrored points and adds these to the list of points.
         :param r: The distance between the point and front/back centre of the disk chopper.
-        :param theta: The angle of the point
-        :return: The Point objects for the mirrored points.
+        :param theta: The angle between the point and the front/back centre.
+        :return: The two point objects.
         """
 
         front, back = self.create_mirrored_points(r, theta)
-        self.add_vertex_to_list(front)
-        self.add_vertex_to_list(back)
+        self.add_point_to_list(front)
+        self.add_point_to_list(back)
 
         return front, back
 
-    def add_face_connected_to_front_centre_to_list(self, points):
+    def add_face_connected_to_front_centre(self, points):
         """
-        Creates a face that is connected to the center point on the front of the disk chopper.
-        :param points: The points that make up the face minus the centre point.
+        Records a face that is connected to the center point on the front of the disk chopper.
+        :param points: A list of points that make up the face minus the centre point.
         """
         self.add_face_to_list([self.front_centre] + points)
 
-    def add_face_connected_to_back_centre_to_list(self, points):
+    def add_face_connected_to_back_centre(self, points):
         """
-        Creates a face that is connected to the center point on the back of the disk chopper.
-        :param points: The points that make up the face minus the centre point.
+        Records a face that is connected to the center point on the back of the disk chopper.
+        :param points: A list of points that make up the face minus the centre point.
         """
         self.add_face_to_list([self.back_centre] + points)
 
-    def add_vertex_to_list(self, point):
+    def add_point_to_list(self, point):
         """
-        Adds a point to the list of vertices and gives it an ID.
-        :param point: The point that is added to the list of vertices.
+        Records a point and gives it an ID.
+        :param point: The point that is added to the list of points.
         """
-        point.set_id(len(self.vertices))
-        self.vertices.append(point)
+        point.set_id(len(self.points))
+        self.points.append(point)
 
     def add_face_to_list(self, points):
         """
-        Adds a face to the list of faces by creating a list of its vertex IDs.
+        Records a face by creating a list of its point IDs and adding this to `self.faces`.
         :param points: A list of the points that compose the face.
         """
         ids = [point.id for point in points]
@@ -156,36 +173,35 @@ class OFFFileCreator:
         """
         self.file_contents += " ".join([str(num) for num in numbers]) + "\n"
 
-    def add_vertex_to_file_string(self, vertex):
+    def add_point_to_file_string(self, point):
         """
-        Adds a vertex to the OFF file contents string by obtaining its point string.
-        :param vertex: The vertex that is added to the file string.
+        Adds a point to the OFF file string by obtaining its point string.
+        :param point: The point that is added to the file string.
         """
-        self.file_contents += vertex.point_string()
+        self.file_contents += point.point_string()
 
     def add_face_to_file_string(self, face):
         """
-        Adds a face to the OFF file string using a list of the vertex IDs.
-        :param face: A list of the IDs of the vertices that make the face.
+        Adds a face to the OFF file string using a list of the point IDs.
+        :param face: A list of the IDs of the points that make the face.
         """
 
-        n_vertices = len(face)
-        self.add_number_string_to_file_string([n_vertices] + face)
+        n_points = len(face)
+        self.add_number_string_to_file_string([n_points] + face)
 
     def create_file_string(self):
         """
         Create the string that stores all the information needed in the OFF file.
         """
-
-        n_vertices = len(self.vertices)
+        n_points = len(self.points)
         n_faces = len(self.faces)
 
-        # Add vertex count and face count to the file. Leave out number of edges as this is optional.
-        self.add_number_string_to_file_string([n_vertices, n_faces, 0])
+        # Add point count and face count to the file. Use zero for the number of edges as this is optional.
+        self.add_number_string_to_file_string([n_points, n_faces, 0])
 
-        # Add the vertex coordinates to the string
-        for vertex in self.vertices:
-            self.add_vertex_to_file_string(vertex)
+        # Add the point information to the string
+        for point in self.points:
+            self.add_point_to_file_string(point)
 
         # Add the face information to the string
         for face in self.faces:
@@ -193,7 +209,7 @@ class OFFFileCreator:
 
     def write_off_file(self):
         """
-        Create a string of OFF file data and write this to a file.
+        Create and write an OFF file.
         :return The filename of the generated OFF file.
         """
         self.create_file_string()
@@ -205,6 +221,10 @@ class OFFFileCreator:
 
 
 class _NXDiskChopperFinder(object):
+    """
+    Finds disk chopper information in a NeXus file.
+    """
+
     def __init__(self):
         self.hits = []
 
@@ -221,7 +241,7 @@ class _NXDiskChopperFinder(object):
 
 class recipe:
     """
-    Generate OFF files from the NXdisk_choppers that are present in the NeXus file.
+    Generate OFF files from the NXdisk_choppers that are present in a NeXus file.
 
     Proposed by: dolica.akello-egwel@stfc.ac.uk
     """
@@ -236,7 +256,7 @@ class recipe:
 
         self.file = filedesc
         self.entry = entrypath
-        self.title = "Create an OFF file from an NXdisk_chopper. Mesh resolution and width can be changed from the recipe __init__ method."
+        self.title = "Create an OFF file from an NXdisk_chopper. Mesh resolution and width can be modified by changing the values in the recipe __init__ method."
 
         self.choppers = None
 
@@ -270,7 +290,19 @@ class recipe:
         second_back,
         r,
     ):
+        """
+        Create additional points and faces between the slit edges to make the mesh look smoother.
+        :param off_creator: An OFFFileCreator object.
+        :param first_angle: The angle of the first slit edge in radians.
+        :param second_angle: The angle of the second slit edge in radians.
+        :param first_front: The front point of the first slit edge,
+        :param first_back: The back point of the first slit edge.
+        :param second_front: The front point of the second slit edge.
+        :param second_back: The back point of the second slit edge.
+        :param r: The distance between the intermediate points and the back/front centre.
+        """
 
+        # Slice the array to obtain an array of intermediate angles between the two slit edges.
         if second_angle > first_angle:
             intermediate_angles = self.resolution_angles[
                 (self.resolution_angles > first_angle)
@@ -288,26 +320,30 @@ class recipe:
 
         for angle in intermediate_angles:
 
+            # Create the front and back points
             current_front, current_back = off_creator.create_and_add_mirrored_points(
                 r, angle
             )
+
+            # Create a four-point face with the current points and the previous points
             off_creator.add_face_to_list(
                 [prev_front, prev_back, current_back, current_front]
             )
-            off_creator.add_face_connected_to_front_centre_to_list(
-                [prev_front, current_front]
-            )
-            off_creator.add_face_connected_to_back_centre_to_list(
-                [prev_back, current_back]
-            )
+
+            # Create a three-point face with the two front points and the front centre point
+            off_creator.add_face_connected_to_front_centre([prev_front, current_front])
+
+            # Create a three-point face with the two back points and the back centre point
+            off_creator.add_face_connected_to_back_centre([prev_back, current_back])
             prev_front = current_front
             prev_back = current_back
 
+        # Create a four-point face that connects the previous two points and the points from the second slit edge
         off_creator.add_face_to_list([prev_front, prev_back, second_back, second_front])
-        off_creator.add_face_connected_to_front_centre_to_list(
-            [prev_front, second_front]
-        )
-        off_creator.add_face_connected_to_back_centre_to_list([prev_back, second_back])
+
+        # Create the final faces connected to the front and back centre points
+        off_creator.add_face_connected_to_front_centre([prev_front, second_front])
+        off_creator.add_face_connected_to_back_centre([prev_back, second_back])
 
     def generate_off_file(self, chopper, resolution, width):
         """
