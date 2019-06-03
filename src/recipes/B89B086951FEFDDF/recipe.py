@@ -374,10 +374,12 @@ class recipe:
 
         for i in range(1, len(slit_edges)):
 
+            # Create four points for the current slit
             current_upper_front, current_upper_back, current_lower_front, current_lower_back = off_creator.create_and_add_point_set(
                 radius, slit_height, slit_edges[i]
             )
 
+            # Create lower intermediate points/faces if the slit angle index is odd
             if i % 2:
                 self.create_intermediate_points_and_faces(
                     off_creator,
@@ -389,6 +391,7 @@ class recipe:
                     current_lower_back,
                     slit_height,
                 )
+            # Create upper intermediate points/faces if the slit angle index is even
             else:
                 self.create_intermediate_points_and_faces(
                     off_creator,
@@ -406,6 +409,7 @@ class recipe:
             prev_lower_front = current_lower_front
             prev_lower_back = current_lower_back
 
+        # Create intermediate points/faces between the first and last slit edges
         self.create_intermediate_points_and_faces(
             off_creator,
             slit_edges[-1],
@@ -417,6 +421,7 @@ class recipe:
             radius,
         )
 
+        # Create an OFF file and return its filename
         return off_creator.write_off_file()
 
     def process(self):
