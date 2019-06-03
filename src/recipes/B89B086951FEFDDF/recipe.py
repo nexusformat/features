@@ -194,6 +194,44 @@ class recipe:
 
         return radius, slit_height, slit_edges, units
 
+    def create_intermediate_points(
+        self,
+        off_creator,
+        first_angle,
+        second_angle,
+        first_front,
+        first_back,
+        second_front,
+        second_back,
+        r,
+    ):
+
+        if second_angle > first_angle:
+            intermediate_angles = self.resolution_angles[
+                (self.resolution_angles > first_angle)
+                & (self.resolution_angles < second_angle)
+            ]
+        else:
+            pass
+
+        prev_front = first_front
+        prev_back = first_back
+
+        for angle in intermediate_angles:
+
+            current_front, current_back = off_creator.create_and_add_mirrored_points(
+                r, angle
+            )
+            off_creator.add_face([prev_front, prev_back, current_back, current_front])
+            off_creator.add_face_connected_to_front_centre([prev_front, current_front])
+            off_creator.add_face_connected_to_back_centre([prev_back, current_back])
+            prev_front = current_front
+            prev_back = current_back
+
+        off_creator.add_face([prev_front, prev_back, second_back, second_front])
+        off_creator.add_face_connected_to_front_centre([prev_front, second_front])
+        off_creator.add_face_connected_to_back_centre([prev_back, second_back])
+
     def generate_off_file(self, chopper, resolution, width):
         """
         Create an OFF file from a given chopper and user-defined width and resolution values.
@@ -212,7 +250,7 @@ class recipe:
         prev_inner_front = first_inner_front = point_set[2]
         prev_inner_back = first_inner_back = point_set[3]
 
-        resolution_angles = np.linspace(0, 360, resolution)
+        self.resolution_angles = np.linspace(0, 360, resolution)
 
         for i in range(1, len(slit_edges)):
 
@@ -220,72 +258,27 @@ class recipe:
                 radius, slit_height, slit_edges[i]
             )
 
-            intermediate_angles = resolution_angles[
-                (resolution_angles > slit_edges[i - 1])
-                & (resolution_angles < slit_edges[i])
-            ]
-            # print(intermediate_angles)
-
             if i % 2:
-
-                prev_front = prev_inner_front
-                prev_back = prev_inner_back
-
-                for angle in intermediate_angles:
-
-                    current_front, current_back = off_creator.create_and_add_mirrored_points(
-                        slit_height, angle
-                    )
-                    off_creator.add_face(
-                        [prev_front, prev_back, current_back, current_front]
-                    )
-                    off_creator.add_face_connected_to_front_centre(
-                        [prev_front, current_front]
-                    )
-                    off_creator.add_face_connected_to_back_centre(
-                        [prev_back, current_back]
-                    )
-                    prev_front = current_front
-                    prev_back = current_back
-
-                off_creator.add_face(
-                    [prev_front, prev_back, current_inner_back, current_inner_front]
+                self.create_intermediate_points(
+                    off_creator,
+                    slit_edges[i - 1],
+                    slit_edges[i],
+                    prev_inner_front,
+                    prev_inner_back,
+                    current_inner_front,
+                    current_inner_back,
+                    slit_height,
                 )
-                off_creator.add_face_connected_to_front_centre(
-                    [prev_front, current_inner_front]
-                )
-                off_creator.add_face_connected_to_back_centre(
-                    [prev_back, current_inner_back]
-                )
-
             else:
-                prev_front = prev_outer_front
-                prev_back = prev_outer_back
-
-                for angle in intermediate_angles:
-                    current_front, current_back = off_creator.create_and_add_mirrored_points(
-                        radius, angle
-                    )
-                    off_creator.add_face(
-                        [prev_front, prev_back, current_back, current_front]
-                    )
-                    off_creator.add_face_connected_to_front_centre(
-                        [prev_front, current_front]
-                    )
-                    off_creator.add_face_connected_to_back_centre(
-                        [prev_back, current_back]
-                    )
-                    prev_front = current_front
-                    prev_back = current_back
-
-                off_creator.add_face(
-                    [prev_front, prev_back, current_outer_back, current_outer_front]
-                )
-                off_creator.add_face_connected_to_front_centre(
-                    [prev_front, current_outer_front]
-                )
-                off_creator.add_face_connected_to_back_centre(
-                    [prev_back, current_outer_back]
+                self.create_intermediate_points(
+                    off_creator,
+                    slit_edges[i - 1],
+                    slit_edges[i],
+                    prev_outer_front,
+                    prev_outer_back,
+                    current_outer_front,
+                    current_outer_back,
+                    radius,
                 )
 
             prev_outer_front = current_outer_front
