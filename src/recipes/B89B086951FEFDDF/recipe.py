@@ -212,7 +212,12 @@ class recipe:
                 & (self.resolution_angles < second_angle)
             ]
         else:
-            pass
+            intermediate_angles = np.append(
+                self.resolution_angles[(self.resolution_angles > first_angle)],
+                self.resolution_angles[(self.resolution_angles < second_angle)],
+            )
+
+            print(intermediate_angles)
 
         prev_front = first_front
         prev_back = first_back
@@ -285,6 +290,17 @@ class recipe:
             prev_outer_back = current_outer_back
             prev_inner_front = current_inner_front
             prev_inner_back = current_inner_back
+
+        self.create_intermediate_points(
+            off_creator,
+            slit_edges[-1],
+            slit_edges[0],
+            prev_outer_front,
+            prev_outer_back,
+            first_outer_front,
+            first_outer_back,
+            radius,
+        )
 
         return off_creator.write_file()
 
