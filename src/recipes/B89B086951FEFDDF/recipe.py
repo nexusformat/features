@@ -149,6 +149,21 @@ class OFFFileCreator:
         return self.file_name
 
 
+class _NXDiskChopperFinder(object):
+
+    def __init__(self):
+        self.hits = []
+
+    def _visit_NXdisk_chopper(self, name, obj):
+        if "NX_class" in obj.attrs.keys():
+            if str(obj.attrs["NX_class"], 'utf8') == "NXdisk_chopper":
+                self.hits.append(obj)
+
+    def get_NXdisk_chopper(self, nx_file, entry):
+        self.hits = []
+        nx_file[entry].visititems(self._visit_NXdisk_chopper)
+        return self.hits
+
 class recipe:
     """
     Generate OFF files from the NXdisk_choppers that are present in the NeXus file.
@@ -170,19 +185,13 @@ class recipe:
 
         self.choppers = None
 
-        # Number of times the chopper bends over the interval from 0 to 360 degrees (excluding slit boundaries)
-        self.resolution = 25
+        # Number of "slices" in the chopper (excluding slit boundaries). Must be zero or greater. A higher value makes the mesh look more round.
+        self.resolution = 0
 
         # The width of the disk chopper
         self.width = 50
 
         self.resolution_angles = None
-
-    def find_disk_choppers(self):
-        """
-        Find all of the disk_choppers contained in the file and return them in a list.
-        """
-        self.choppers = [self.file["entry"]["instrument"]["example_chopper"]]
 
     @staticmethod
     def get_chopper_data(chopper):
@@ -319,7 +328,8 @@ class recipe:
         :return: the essence of the information recorded in this feature
         """
 
-        self.find_disk_choppers()
+        chopper_finder = _NXDiskChopperFinder()
+        self.choppers = chopper_finder.get_NXdisk_chopper(self.file, self.entry)
 
         if not self.choppers:
             return "Unable to find disk choppers. No files created."
