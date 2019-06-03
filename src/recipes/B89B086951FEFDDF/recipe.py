@@ -6,10 +6,12 @@ class Point:
         self.x = x
         self.y = y
         self.z = z
-        self.id = 0
+        self.id = None
 
     def set_id(self, index):
-        self.id = index
+
+        if self.id is None and index is not None:
+            self.id = index
 
     def point_string(self):
         return " ".join([str(self.x), str(self.y), str(self.z)]) + "\n"
@@ -23,7 +25,6 @@ class OFFFileCreator:
 
         self.file_contents = "OFF\n"
         self.vertices = []
-        self.vertex_counter = 0
         self.faces = []
         self.z = z
 
@@ -37,10 +38,12 @@ class OFFFileCreator:
         self.back_centre = Point(0, 0, -self.z)
         self.add_vertex(self.back_centre)
 
-    def find_x(self, radius, theta):
+    @staticmethod
+    def find_x(radius, theta):
         return radius * np.cos(theta)
 
-    def find_y(self, radius, theta):
+    @staticmethod
+    def find_y(radius, theta):
         return radius * np.sin(theta)
 
     def create_mirrored_points(self, r, theta):
@@ -97,9 +100,8 @@ class OFFFileCreator:
 
     def add_vertex(self, point):
 
-        point.set_id(self.vertex_counter)
+        point.set_id(len(self.vertices))
         self.vertices.append(point)
-        self.vertex_counter += 1
 
     def add_vertices(self, points):
 
@@ -172,7 +174,7 @@ class recipe:
         self.resolution = 25
 
         # The width of the disk chopper
-        self.width = 300
+        self.width = 50
 
         self.resolution_angles = None
 
