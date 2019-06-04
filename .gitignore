@@ -55,8 +55,3 @@ target/
 
 # PyCharm
 .idea/
-
-
-# OFF Stuff
-*.off
-createmesh.sh
