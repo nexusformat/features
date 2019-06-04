@@ -358,6 +358,8 @@ class recipe:
         # Convert the slit edges to radians if they're in degrees
         if units == b"deg":
             slit_edges = [np.deg2rad(x) % recipe.TWO_PI for x in slit_edges]
+        else:
+            slit_edges = [x % recipe.TWO_PI for x in slit_edges]
 
         off_creator = OFFFileCreator(width * 0.5)
 
