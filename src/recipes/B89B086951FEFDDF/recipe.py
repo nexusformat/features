@@ -124,7 +124,7 @@ class OFFFileCreator:
 
     def create_and_add_mirrored_points(self, r, theta):
         """
-        Creats and records two mirrored points and adds these to the list of points.
+        Creates and records two mirrored points and adds these to the list of points.
         :param r: The distance between the point and front/back centre of the disk chopper.
         :param theta: The angle between the point and the front/back centre.
         :return: The two point objects.
