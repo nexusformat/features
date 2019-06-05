@@ -76,8 +76,8 @@ class OFFFileCreator:
 
     def create_and_add_point_set(self, radius, slit_height, slit_edge):
         """
-        Creates and records the upper and lower points for a slit edge and adds these to the file string. Also adds the face made
-        from all four points to the file string.
+        Creates and records the upper and lower points for a slit edge and adds these to the file string. Also adds the
+        face made from all four points to the file string.
         :param radius: The radius of the disk chopper.
         :param slit_height: The height of the slit.
         :param slit_edge: The angle of the slit in radians.
@@ -246,11 +246,17 @@ class recipe:
 
         self.file = filedesc
         self.entry = entrypath
-        self.title = "Create an OFF file from an NXdisk_chopper. Mesh resolution and width can be modified by changing the values in the recipe __init__ method."
+        self.title = (
+            "Create an OFF file from an NXdisk_chopper. Mesh resolution and width can be modified by changing"
+            " the values in the recipe __init__ method."
+        )
 
         self.choppers = None
 
-        # Number of "slices" in the chopper excluding slit boundaries. Must be zero or greater. A higher value makes the mesh more detailed.
+        """
+        Number of "slices" in the chopper excluding slit boundaries. Must be zero or greater. A higher value makes the
+        mesh more detailed.
+        """
         self.resolution = 50
         self.resolution_angles = None
 
