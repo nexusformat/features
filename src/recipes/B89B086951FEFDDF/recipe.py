@@ -370,7 +370,7 @@ class recipe:
         prev_lower_front = point_set[2]
         prev_lower_back = point_set[3]
 
-        # Remove the first angle to avoid creating duplicate points at angle 0 and at angle 360
+        # Remove the first angle to avoid creating duplicate points at angle 0 and angle 360
         self.resolution_angles = np.linspace(0, recipe.TWO_PI, self.resolution + 1)[1:]
 
         for i in range(1, len(slit_edges)):
@@ -441,11 +441,9 @@ class recipe:
             return "Unable to find disk choppers. No files created."
 
         else:
-
             output_file_names = []
 
             for chopper in self.choppers:
-
                 output_file_names.append(self.generate_off_file(chopper))
 
             print("Successfully created file(s): " + ", ".join(output_file_names))
