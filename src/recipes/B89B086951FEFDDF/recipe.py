@@ -74,12 +74,12 @@ class OFFFileCreator:
 
         return Point(x, y, self.z), Point(x, y, -self.z)
 
-    def create_and_add_point_set(self, radius, slit_height, slit_edge):
+    def create_and_add_point_set(self, radius, centre_to_slit_start, slit_edge):
         """
         Creates and records the upper and lower points for a slit edge and adds these to the file string. Also adds the
         face made from all four points to the file string.
         :param radius: The radius of the disk chopper.
-        :param slit_height: The height of the slit.
+        :param centre_to_slit_start: The distance between the disk centre and the start of the slit.
         :param slit_edge: The angle of the slit in radians.
         :return: A list containing point objects for the four points in the chopper mesh with an angle of `slit_edge`.
         """
@@ -89,7 +89,7 @@ class OFFFileCreator:
             radius, slit_edge
         )
         lower_front_point, lower_back_point = self.create_mirrored_points(
-            radius - slit_height, slit_edge
+            centre_to_slit_start, slit_edge
         )
 
         # Add all of the points to the list of points.
@@ -349,6 +349,9 @@ class recipe:
         # Obtain the radius, slit height, slit angles, and units from the chopper data
         radius, slit_height, slit_edges, units = self.get_chopper_data(chopper)
 
+        # Find the distance from the disk centre to the bottom of the slit
+        centre_to_slit_bottom = radius - slit_height
+
         # Convert the slit edges to radians if they're in degrees
         if units == b"deg":
             slit_edges = [np.deg2rad(x) % recipe.TWO_PI for x in slit_edges]
@@ -359,7 +362,7 @@ class recipe:
 
         # Create four points for the first slit in the chopper data
         point_set = off_creator.create_and_add_point_set(
-            radius, slit_height, slit_edges[0]
+            radius, centre_to_slit_bottom, slit_edges[0]
         )
 
         prev_upper_front = first_upper_front = point_set[0]
@@ -372,9 +375,9 @@ class recipe:
 
         for i in range(1, len(slit_edges)):
 
-            # Create four points for the current slit
+            # Create four points for the current slit edge
             current_upper_front, current_upper_back, current_lower_front, current_lower_back = off_creator.create_and_add_point_set(
-                radius, slit_height, slit_edges[i]
+                radius, centre_to_slit_bottom, slit_edges[i]
             )
 
             # Create lower intermediate points/faces if the slit angle index is odd
@@ -387,7 +390,7 @@ class recipe:
                     prev_lower_back,
                     current_lower_front,
                     current_lower_back,
-                    radius - slit_height,
+                    centre_to_slit_bottom,
                 )
             # Create upper intermediate points/faces if the slit angle index is even
             else:
