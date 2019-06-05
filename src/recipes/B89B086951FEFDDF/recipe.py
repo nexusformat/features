@@ -81,7 +81,7 @@ class OFFFileCreator:
         :param radius: The radius of the disk chopper.
         :param slit_height: The height of the slit.
         :param slit_edge: The angle of the slit in radians.
-        :return: A list containing point objects for the four points in the chopper mesh with an angle of `slit_height`.
+        :return: A list containing point objects for the four points in the chopper mesh with an angle of `slit_edge`.
         """
 
         # Create the upper and lower points for the opening/closing slit edge.
@@ -89,7 +89,7 @@ class OFFFileCreator:
             radius, slit_edge
         )
         lower_front_point, lower_back_point = self.create_mirrored_points(
-            slit_height, slit_edge
+            radius - slit_height, slit_edge
         )
 
         # Add all of the points to the list of points.
@@ -247,7 +247,7 @@ class recipe:
         self.file = filedesc
         self.entry = entrypath
         self.title = (
-            "Create an OFF file from an NXdisk_chopper. Mesh resolution and width can be modified by changing"
+            "Create an OFF file from an NXdisk_chopper. Mesh resolution and thickness can be modified by changing"
             " the values in the recipe __init__ method."
         )
 
@@ -260,8 +260,8 @@ class recipe:
         self.resolution = 50
         self.resolution_angles = None
 
-        # The width of the disk chopper
-        self.width = 50
+        # The thickness of the disk chopper. This is used only for display purposes in order to make the model 3D.
+        self.thickness = 50
 
     @staticmethod
     def get_chopper_data(chopper):
@@ -341,9 +341,9 @@ class recipe:
         off_creator.add_face_connected_to_front_centre([prev_front, second_front])
         off_creator.add_face_connected_to_back_centre([prev_back, second_back])
 
-    def generate_off_file(self, chopper, resolution, width):
+    def generate_off_file(self, chopper, resolution, thickness):
         """
-        Create an OFF file from a given chopper and user-defined width and resolution values.
+        Create an OFF file from a given chopper and user-defined thickness and resolution values.
         """
 
         # Obtain the radius, slit height, slit angles, and units from the chopper data
@@ -355,7 +355,7 @@ class recipe:
         else:
             slit_edges = [x % recipe.TWO_PI for x in slit_edges]
 
-        off_creator = OFFFileCreator(width * 0.5)
+        off_creator = OFFFileCreator(thickness * 0.5)
 
         # Create four points for the first slit in the chopper data
         point_set = off_creator.create_and_add_point_set(
@@ -387,7 +387,7 @@ class recipe:
                     prev_lower_back,
                     current_lower_front,
                     current_lower_back,
-                    slit_height,
+                    radius - slit_height,
                 )
             # Create upper intermediate points/faces if the slit angle index is even
             else:
@@ -444,7 +444,7 @@ class recipe:
             for chopper in self.choppers:
 
                 output_file_names.append(
-                    self.generate_off_file(chopper, self.resolution, self.width)
+                    self.generate_off_file(chopper, self.resolution, self.thickness)
                 )
 
             print("Successfully created file(s): " + ", ".join(output_file_names))
