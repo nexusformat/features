@@ -341,7 +341,7 @@ class recipe:
         off_creator.add_face_connected_to_front_centre([prev_front, second_front])
         off_creator.add_face_connected_to_back_centre([prev_back, second_back])
 
-    def generate_off_file(self, chopper, resolution, thickness):
+    def generate_off_file(self, chopper):
         """
         Create an OFF file from a given chopper and user-defined thickness and resolution values.
         """
@@ -358,7 +358,7 @@ class recipe:
         else:
             slit_edges = [x % recipe.TWO_PI for x in slit_edges]
 
-        off_creator = OFFFileCreator(thickness * 0.5)
+        off_creator = OFFFileCreator(self.thickness * 0.5)
 
         # Create four points for the first slit in the chopper data
         point_set = off_creator.create_and_add_point_set(
@@ -371,7 +371,7 @@ class recipe:
         prev_lower_back = point_set[3]
 
         # Remove the first angle to avoid creating duplicate points at angle 0 and at angle 360
-        self.resolution_angles = np.linspace(0, recipe.TWO_PI, resolution + 1)[1:]
+        self.resolution_angles = np.linspace(0, recipe.TWO_PI, self.resolution + 1)[1:]
 
         for i in range(1, len(slit_edges)):
 
@@ -446,8 +446,6 @@ class recipe:
 
             for chopper in self.choppers:
 
-                output_file_names.append(
-                    self.generate_off_file(chopper, self.resolution, self.thickness)
-                )
+                output_file_names.append(self.generate_off_file(chopper))
 
             print("Successfully created file(s): " + ", ".join(output_file_names))
