@@ -54,24 +54,14 @@ class OFFFileCreator:
         self.add_point_to_list(self.back_centre)
 
     @staticmethod
-    def find_x(r, theta):
+    def polar_to_cartesian_2d(r, theta):
         """
-        Find the x coordinate of a point given r and theta.
-        :param r: The distance between the point and the origin.
-        :param theta: The angle of the point in radians.
-        :return: The x coordinate of the point.
+        Converts polar coordinates to cartesian coordinates.
+        :param r: The vector magnitude.
+        :param theta: The vector angle.
+        :return: x, y
         """
-        return r * np.cos(theta)
-
-    @staticmethod
-    def find_y(r, theta):
-        """
-        Find the y coordinate of a point given r and theta.
-        :param r: The distance between the point and the origin.
-        :param theta: The angle of the point in radians.
-        :return: The y coordinate of the point.
-        """
-        return r * np.sin(theta)
+        return r * np.cos(theta), r * np.sin(theta)
 
     def create_mirrored_points(self, r, theta):
         """
@@ -80,9 +70,7 @@ class OFFFileCreator:
         :param theta: The angle between the point and the front/back centre.
         :return: Two points that have a distance of 2*z from each other.
         """
-
-        x = self.find_x(r, theta)
-        y = self.find_y(r, theta)
+        x, y = self.polar_to_cartesian_2d(r, theta)
 
         return Point(x, y, self.z), Point(x, y, -self.z)
 
@@ -263,7 +251,7 @@ class recipe:
         self.choppers = None
 
         # Number of "slices" in the chopper excluding slit boundaries. Must be zero or greater. A higher value makes the mesh more detailed.
-        self.resolution = 30
+        self.resolution = 50
         self.resolution_angles = None
 
         # The width of the disk chopper
