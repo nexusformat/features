@@ -31,19 +31,12 @@ class OFFFileCreator:
     Tool for creating OFF files from NXdisk_chopper information.
     """
 
-    _file_counter = 0
-
     def __init__(self, z):
 
         self.file_contents = "OFF\n"
         self.points = []
         self.faces = []
         self.z = z
-
-        self.file_name = (
-            "chopper_geometry_" + str(OFFFileCreator._file_counter) + ".off"
-        )
-        OFFFileCreator._file_counter += 1
 
         # Create points for the front and back centres of the disk
         self.front_centre = Point(0, 0, self.z)
@@ -177,7 +170,7 @@ class OFFFileCreator:
         n_points = len(face)
         self.add_number_string_to_file_string([n_points] + face)
 
-    def create_file_string(self):
+    def generate_file_contents(self):
         """
         Create the string that stores all the information needed in the OFF file.
         """
@@ -195,17 +188,33 @@ class OFFFileCreator:
         for face in self.faces:
             self.add_face_to_file_string(face)
 
-    def write_off_file(self):
+    def get_file_contents(self):
         """
-        Create and write an OFF file.
-        :return The filename of the generated OFF file.
+        :return An OFF file for a disk chopper in the form of a string.
         """
-        self.create_file_string()
+        return self.file_contents
 
-        with open(self.file_name, "w") as f:
-            f.write(self.file_contents)
 
-        return self.file_name
+class OFFFileWrapper(object):
+
+    _chopper_counter = 0
+
+    def __init__(self, contents, percent_covered, num_slits):
+        self.name = "Chopper " + str(OFFFileWrapper._chopper_counter)
+        OFFFileWrapper._chopper_counter += 1
+        self.file_contents = contents
+        self.percent_covered = percent_covered
+        self.num_slits = num_slits
+
+    def str(self):
+        print(
+            "Chopper ({}) has {} openings covering {}% of the disk.".format(
+                self.name, self.num_slits, self.percent_covered
+            )
+        )
+
+    def write_OFF_file(self, filename):
+        pass
 
 
 class _NXDiskChopperFinder(object):
@@ -341,7 +350,7 @@ class recipe:
         off_creator.add_face_connected_to_front_centre([prev_front, second_front])
         off_creator.add_face_connected_to_back_centre([prev_back, second_back])
 
-    def generate_off_file(self, chopper):
+    def generate_off_wrapper(self, chopper):
         """
         Create an OFF file from a given chopper and user-defined thickness and resolution values.
         """
@@ -422,8 +431,22 @@ class recipe:
             radius,
         )
 
-        # Create an OFF file and return its filename
-        return off_creator.write_off_file()
+        off_creator.generate_file_contents()
+
+        percent_not_covered = 0
+
+        for i in range(len(slit_edges) - 1):
+
+            slit_size = slit_edges[i + 1] - slit_edges[i]
+            percent_not_covered += self.angle_to_percentage(slit_size)
+
+        percent_covered = 100 - percent_not_covered
+
+        return OFFFileWrapper(
+            off_creator.get_file_contents(), percent_covered, len(slit_edges) // 2
+        )
+
+        # return off_creator.get_file_contents()
 
     def process(self):
         """
@@ -438,12 +461,17 @@ class recipe:
         self.choppers = chopper_finder.get_NXdisk_chopper(self.file, self.entry)
 
         if not self.choppers:
-            return "Unable to find disk choppers. No files created."
+            raise Exception("No chopper data found in the NeXus file.")
 
         else:
-            output_file_names = []
+            off_wrappers = []
 
             for chopper in self.choppers:
-                output_file_names.append(self.generate_off_file(chopper))
+                off_wrappers.append(self.generate_off_wrapper(chopper))
+                off_wrappers[-1].str()
 
-            print("Successfully created file(s): " + ", ".join(output_file_names))
+            return off_wrappers
+
+    @staticmethod
+    def angle_to_percentage(slit_size):
+        return (slit_size / recipe.TWO_PI) * 100
