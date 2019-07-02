@@ -28,7 +28,7 @@ class Point:
 
 class OFFFileCreator:
     """
-    Tool for creating OFF files from NXdisk_chopper information.
+    Tool for creating OFF files in the form of strings from NXdisk_chopper information.
     """
 
     def __init__(self, z):
@@ -166,7 +166,6 @@ class OFFFileCreator:
         Adds a face to the OFF file string using a list of the point IDs.
         :param face: A list of the IDs of the points that make the face.
         """
-
         n_points = len(face)
         self.add_number_string_to_file_string([n_points] + face)
 
@@ -196,24 +195,44 @@ class OFFFileCreator:
 
 
 class OFFFileWrapper(object):
+    """
+    Wrapper for an OFF file that is capable of writing files. Automatically gives it a name based on the the number of
+    wrappers that have been created. Percent covered is rounded to a whole number.
+    :param contents: A string containing the contents of the OFF file.
+    :param percent_covered: Figure indicating how much of the chopper is covered by slits.
+    :param num_slits: The number of slits in the chopper.
+    """
 
-    _chopper_counter = 0
+    def __init__(self, name, contents, percent_covered, num_slits):
 
-    def __init__(self, contents, percent_covered, num_slits):
-        self.name = "Chopper " + str(OFFFileWrapper._chopper_counter)
-        OFFFileWrapper._chopper_counter += 1
+        self.name = name
         self.file_contents = contents
-        self.percent_covered = percent_covered
+        self.percent_covered = int(round(percent_covered))
         self.num_slits = num_slits
 
+    def set_name(self, name):
+        """
+        Change the name of the disk chopper.
+        :param name: The desired name for the chopper.
+        """
+        self.name = name
+
     def str(self):
+        """
+        Prints a string containing the chopper name, its number of slits, and a figure indicating how much of the
+        chopper is covered in slits.
+        """
         print(
             "Chopper ({}) has {} openings covering {}% of the disk.".format(
-                self.name, self.num_slits, int(round(self.percent_covered))
+                self.name, self.num_slits, self.percent_covered
             )
         )
 
     def write_OFF_file(self, filename):
+        """
+        Takes a filename argument and writes the `file_contents` to a file.
+        :param filename: The desired filename of the OFF file.
+        """
         with open(filename, "w") as f:
             f.write(self.file_contents)
 
@@ -278,12 +297,18 @@ class recipe:
         """
         Extract radius, slit_height, slit_edges, and angle units data from a given chopper group.
         """
-        radius = chopper["radius"][()]
-        slit_height = chopper["slit_height"][()]
-        slit_edges = chopper["slit_edges"][()]
-        units = chopper["slit_edges"].attrs["units"]
+        try:
+            name = chopper["name"][()]
+            radius = chopper["radius"][()]
+            slit_height = chopper["slit_height"][()]
+            slit_edges = chopper["slit_edges"][()]
+            units = chopper["slit_edges"].attrs["units"]
+        except KeyError:
+            raise Exception(
+                "Unable to create chopper geometry. One or more of the followings fields is missing: name, radius, slit_height, slit_edges, units."
+            )
 
-        return radius, slit_height, slit_edges, units
+        return name, radius, slit_height, slit_edges, units
 
     def create_intermediate_points_and_faces(
         self,
@@ -357,7 +382,7 @@ class recipe:
         """
 
         # Obtain the radius, slit height, slit angles, and units from the chopper data
-        radius, slit_height, slit_edges, units = self.get_chopper_data(chopper)
+        name, radius, slit_height, slit_edges, units = self.get_chopper_data(chopper)
 
         # Find the distance from the disk centre to the bottom of the slit
         centre_to_slit_bottom = radius - slit_height
@@ -435,12 +460,18 @@ class recipe:
         off_creator.generate_file_contents()
 
         return OFFFileWrapper(
+            name,
             off_creator.get_file_contents(),
             self.find_percent_covered(slit_edges),
             len(slit_edges) // 2,
         )
 
     def find_percent_covered(self, slit_edges):
+        """
+        Determines the percentage of the chopper that is covered by slits.
+        :param slit_edges: The array of slit-edge angles.
+        :return: The percentage of slit coverage in the form of a float.
+        """
         percent_covered = 0
         for i in range(0, len(slit_edges) - 1, 2):
             slit_size = (slit_edges[i + 1] - slit_edges[i]) % recipe.TWO_PI
@@ -473,4 +504,8 @@ class recipe:
 
     @staticmethod
     def angle_to_percentage(slit_size):
+        """
+        :param slit_size: The size of a slit in radians.
+        :return: The slit size as a percentage of two pi.
+        """
         return (slit_size / recipe.TWO_PI) * 100
