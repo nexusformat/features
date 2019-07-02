@@ -439,11 +439,9 @@ class recipe:
             len(slit_edges) // 2,
         )
 
-        # return off_creator.get_file_contents()
-
     def find_percent_covered(self, slit_edges):
         percent_covered = 0
-        for i in range(len(slit_edges) - 1):
+        for i in range(0, len(slit_edges) - 1, 2):
             slit_size = (slit_edges[i + 1] - slit_edges[i]) % recipe.TWO_PI
             percent_covered += self.angle_to_percentage(slit_size)
         return percent_covered
