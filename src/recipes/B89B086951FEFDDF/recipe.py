@@ -508,16 +508,16 @@ class recipe:
             try:
                 chopper[field][()]
             except KeyError:
-                fails.append(field)
+                fails.append("{} is missing from chopper data.".format(field))
 
         for field, attr in required_attributes:
             try:
                 chopper[field].attrs[attr]
             except KeyError:
-                fails.append(field)
+                fails.append("{} is missing from {}.".format(attr, field))
 
-        if fails:
-            raise Exception("Missing info:", fails)
+        if len(fails) > 0:
+            raise Exception("\n".join(fails))
 
     @staticmethod
     def angle_to_percentage(slit_size):
