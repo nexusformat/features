@@ -297,16 +297,11 @@ class recipe:
         """
         Extract radius, slit_height, slit_edges, and angle units data from a given chopper group.
         """
-        try:
-            name = chopper["name"][()]
-            radius = chopper["radius"][()]
-            slit_height = chopper["slit_height"][()]
-            slit_edges = chopper["slit_edges"][()]
-            units = chopper["slit_edges"].attrs["units"]
-        except KeyError:
-            raise Exception(
-                "Unable to create chopper geometry. One or more of the followings fields is missing: name, radius, slit_height, slit_edges, units."
-            )
+        name = chopper["name"][()]
+        radius = chopper["radius"][()]
+        slit_height = chopper["slit_height"][()]
+        slit_edges = chopper["slit_edges"][()]
+        units = chopper["slit_edges"].attrs["units"]
 
         return name, radius, slit_height, slit_edges, units
 
@@ -380,7 +375,6 @@ class recipe:
         """
         Create an OFF file from a given chopper and user-defined thickness and resolution values.
         """
-
         # Obtain the radius, slit height, slit angles, and units from the chopper data
         name, radius, slit_height, slit_edges, units = self.get_chopper_data(chopper)
 
@@ -490,6 +484,9 @@ class recipe:
         chopper_finder = _NXDiskChopperFinder()
         self.choppers = chopper_finder.get_NXdisk_chopper(self.file, self.entry)
 
+        required_fields = ["slit_height", "slit_edges", "radius"]
+        required_attributes = [("slit_edges", "units")]
+
         if not self.choppers:
             raise Exception("No chopper data found in the NeXus file.")
 
@@ -497,10 +494,30 @@ class recipe:
             off_wrappers = []
 
             for chopper in self.choppers:
+
+                self.validate_chopper(chopper, required_fields, required_attributes)
                 off_wrappers.append(self.generate_off_wrapper(chopper))
                 off_wrappers[-1].str()
 
             return off_wrappers
+
+    @staticmethod
+    def validate_chopper(chopper, required_fields, required_attributes):
+        fails = []
+        for field in required_fields:
+            try:
+                chopper[field][()]
+            except KeyError:
+                fails.append(field)
+
+        for field, attr in required_attributes:
+            try:
+                chopper[field].attrs[attr]
+            except KeyError:
+                fails.append(field)
+
+        if fails:
+            raise Exception("Missing info:", fails)
 
     @staticmethod
     def angle_to_percentage(slit_size):
