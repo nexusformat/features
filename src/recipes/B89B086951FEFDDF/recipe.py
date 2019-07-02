@@ -209,7 +209,7 @@ class OFFFileWrapper(object):
     def str(self):
         print(
             "Chopper ({}) has {} openings covering {}% of the disk.".format(
-                self.name, self.num_slits, self.percent_covered
+                self.name, self.num_slits, int(round(self.percent_covered))
             )
         )
 
@@ -433,20 +433,20 @@ class recipe:
 
         off_creator.generate_file_contents()
 
-        percent_not_covered = 0
-
-        for i in range(len(slit_edges) - 1):
-
-            slit_size = slit_edges[i + 1] - slit_edges[i]
-            percent_not_covered += self.angle_to_percentage(slit_size)
-
-        percent_covered = 100 - percent_not_covered
-
         return OFFFileWrapper(
-            off_creator.get_file_contents(), percent_covered, len(slit_edges) // 2
+            off_creator.get_file_contents(),
+            self.find_percent_covered(slit_edges),
+            len(slit_edges) // 2,
         )
 
         # return off_creator.get_file_contents()
+
+    def find_percent_covered(self, slit_edges):
+        percent_covered = 0
+        for i in range(len(slit_edges) - 1):
+            slit_size = (slit_edges[i + 1] - slit_edges[i]) % recipe.TWO_PI
+            percent_covered += self.angle_to_percentage(slit_size)
+        return percent_covered
 
     def process(self):
         """
