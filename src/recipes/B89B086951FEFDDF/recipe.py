@@ -484,7 +484,7 @@ class recipe:
         chopper_finder = _NXDiskChopperFinder()
         self.choppers = chopper_finder.get_NXdisk_chopper(self.file, self.entry)
 
-        required_fields = ["slit_height", "slit_edges", "radius"]
+        required_fields = ["slits", "slit_height", "slit_edges", "radius"]
         required_attributes = [("slit_edges", "units")]
 
         if not self.choppers:
@@ -518,6 +518,17 @@ class recipe:
 
         if len(fails) > 0:
             raise Exception("\n".join(fails))
+
+        slits = chopper["slits"][()]
+        slit_edges = chopper["slit_edges"][()]
+        n_slit_edges = len(slit_edges)
+
+        if n_slit_edges != slits * 2:
+            raise Exception(
+                "Mismatch between number of slits ({}) and length of slit array ({}).".format(
+                    slits, n_slit_edges
+                )
+            )
 
     @staticmethod
     def angle_to_percentage(slit_size):
