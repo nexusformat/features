@@ -169,7 +169,7 @@ class OFFFileCreator:
         n_points = len(face)
         self.add_number_string_to_file_string([n_points] + face)
 
-    def generate_file_contents(self):
+    def _generate_file_contents(self):
         """
         Create the string that stores all the information needed in the OFF file.
         """
@@ -191,13 +191,14 @@ class OFFFileCreator:
         """
         :return An OFF file for a disk chopper in the form of a string.
         """
+        if self.file_contents == "OFF\n":
+            self._generate_file_contents()
         return self.file_contents
 
 
 class OFFFileWrapper(object):
     """
-    Wrapper for an OFF file that is capable of writing files. Automatically gives it a name based on the the number of
-    wrappers that have been created. Percent covered is rounded to a whole number.
+    Wrapper for an OFF file that is capable of writing files. Percent covered is rounded to a whole number.
     :param contents: A string containing the contents of the OFF file.
     :param percent_covered: Figure indicating how much of the chopper is covered by slits.
     :param num_slits: The number of slits in the chopper.
@@ -210,13 +211,6 @@ class OFFFileWrapper(object):
         self.percent_covered = int(round(percent_covered))
         self.num_slits = num_slits
 
-    def set_name(self, name):
-        """
-        Change the name of the disk chopper.
-        :param name: The desired name for the chopper.
-        """
-        self.name = name
-
     def str(self):
         """
         Prints a string containing the chopper name, its number of slits, and a figure indicating how much of the
@@ -228,7 +222,7 @@ class OFFFileWrapper(object):
             )
         )
 
-    def write_OFF_file(self, filename):
+    def write_off_file(self, filename):
         """
         Takes a filename argument and writes the `file_contents` to a file.
         :param filename: The desired filename of the OFF file.
@@ -281,23 +275,27 @@ class recipe:
         )
 
         self.choppers = None
+        self.off_wrappers = []
 
-        """
-        Number of "slices" in the chopper excluding slit boundaries. Must be zero or greater. A higher value makes the
-        mesh more detailed.
-        """
+        # Number of "slices" in the chopper excluding slit boundaries. Must be zero or greater. A higher value makes the
+        # mesh more detailed.
         self.resolution = 50
         self.resolution_angles = None
 
         # The thickness of the disk chopper. This is used only for display purposes in order to make the model 3D.
         self.thickness = 50
 
-    @staticmethod
-    def get_chopper_data(chopper):
+        self.required_fields = ["slits", "slit_height", "slit_edges", "radius"]
+        self.required_attributes = [("slit_edges", "units")]
+
+    def get_chopper_data(self, chopper):
         """
         Extract radius, slit_height, slit_edges, and angle units data from a given chopper group.
         """
-        name = chopper["name"][()]
+        try:
+            name = chopper["name"][()]
+        except KeyError:
+            name = "Chopper " + str(len(self.off_wrappers))
         radius = chopper["radius"][()]
         slit_height = chopper["slit_height"][()]
         slit_edges = chopper["slit_edges"][()]
@@ -451,8 +449,6 @@ class recipe:
             radius,
         )
 
-        off_creator.generate_file_contents()
-
         return OFFFileWrapper(
             name,
             off_creator.get_file_contents(),
@@ -472,45 +468,30 @@ class recipe:
             percent_covered += self.angle_to_percentage(slit_size)
         return percent_covered
 
-    def process(self):
-        """
-        Recipes need to implement this method and return information which
-        is useful to a user and instructive to a person reading the code.
-        See some of the recommended examples for inspiration what to return.
-
-        :return: A list of the the filenames of the OFF files that have been created.
-        """
-
-        chopper_finder = _NXDiskChopperFinder()
-        self.choppers = chopper_finder.get_NXdisk_chopper(self.file, self.entry)
-
-        required_fields = ["slits", "slit_height", "slit_edges", "radius"]
-        required_attributes = [("slit_edges", "units")]
-
-        if not self.choppers:
-            raise Exception("No chopper data found in the NeXus file.")
-
-        else:
-            off_wrappers = []
-
-            for chopper in self.choppers:
-
-                self.validate_chopper(chopper, required_fields, required_attributes)
-                off_wrappers.append(self.generate_off_wrapper(chopper))
-                off_wrappers[-1].str()
-
-            return off_wrappers
-
     @staticmethod
-    def validate_chopper(chopper, required_fields, required_attributes):
+    def angle_to_percentage(slit_size):
+        """
+        :param slit_size: The size of a slit in radians.
+        :return: The slit size as a percentage of two pi.
+        """
+        return (slit_size / recipe.TWO_PI) * 100
+
+    def validate_chopper(self, chopper):
+        """
+        Attempts to make sure that the chopper information is correct. Checks for the presence of the required fields,
+        and then checks that the slit edges array has a length that is twice the number of slits. Raises an exception
+        if validation is unsuccessful.
+        :param chopper: The chopper to be validated.
+        """
         fails = []
-        for field in required_fields:
+
+        for field in self.required_fields:
             try:
                 chopper[field][()]
             except KeyError:
                 fails.append("{} is missing from chopper data.".format(field))
 
-        for field, attr in required_attributes:
+        for field, attr in self.required_attributes:
             try:
                 chopper[field].attrs[attr]
             except KeyError:
@@ -530,10 +511,27 @@ class recipe:
                 )
             )
 
-    @staticmethod
-    def angle_to_percentage(slit_size):
+    def process(self):
         """
-        :param slit_size: The size of a slit in radians.
-        :return: The slit size as a percentage of two pi.
+        Recipes need to implement this method and return information which
+        is useful to a user and instructive to a person reading the code.
+        See some of the recommended examples for inspiration what to return.
+
+        :return: A list of the the filenames of the OFF files that have been created.
         """
-        return (slit_size / recipe.TWO_PI) * 100
+
+        chopper_finder = _NXDiskChopperFinder()
+        self.choppers = chopper_finder.get_NXdisk_chopper(self.file, self.entry)
+
+        if not self.choppers:
+            raise Exception("No chopper data found in the NeXus file.")
+
+        else:
+
+            for chopper in self.choppers:
+
+                self.validate_chopper(chopper)
+                self.off_wrappers.append(self.generate_off_wrapper(chopper))
+                self.off_wrappers[-1].str()
+
+            return self.off_wrappers
