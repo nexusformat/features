@@ -214,7 +214,8 @@ class OFFFileWrapper(object):
         )
 
     def write_OFF_file(self, filename):
-        pass
+        with open(filename, "w") as f:
+            f.write(self.file_contents)
 
 
 class _NXDiskChopperFinder(object):
