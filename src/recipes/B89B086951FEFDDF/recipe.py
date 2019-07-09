@@ -290,10 +290,7 @@ class recipe:
 
         self.file = filedesc
         self.entry = entrypath
-        self.title = (
-            "Create an OFF file from an NXdisk_chopper. Mesh resolution and thickness can be modified by changing"
-            " the values in the recipe __init__ method."
-        )
+        self.title = "NXdisk_chopper geometry that can be represented in an OFF file"
 
         self.choppers = None
         self.off_wrappers = []
