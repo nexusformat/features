@@ -31,24 +31,25 @@ class OFFFileCreator:
     Tool for creating OFF files in the form of strings from NXdisk_chopper information.
     """
 
-    def __init__(self, z, radius):
+    def __init__(self, z, radius, resolution):
 
         self.file_contents = "OFF\n"
         self.points = []
         self.faces = []
         self.z = z
-        self.radius = radius
+        self.arrow_size = radius * 0.05
+        self.resolution = resolution
 
         # Create points for the front and back centres of the disk
         self.front_centre = Point(0, 0, self.z)
         self.back_centre = Point(0, 0, -self.z)
 
         # Add the front and back centre points to the lists of points
-        self.add_point_to_list(self.front_centre)
-        self.add_point_to_list(self.back_centre)
+        self._add_point_to_list(self.front_centre)
+        self._add_point_to_list(self.back_centre)
 
     @staticmethod
-    def polar_to_cartesian_2d(r, theta):
+    def _polar_to_cartesian_2d(r, theta):
         """
         Converts polar coordinates to cartesian coordinates.
         :param r: The vector magnitude.
@@ -57,14 +58,14 @@ class OFFFileCreator:
         """
         return r * np.cos(theta), r * np.sin(theta)
 
-    def create_mirrored_points(self, r, theta):
+    def _create_mirrored_points(self, r, theta):
         """
         Creates two points that share the same x and y values and have opposite z values.
         :param r: The distance between the points and the front/back centre of the disk chopper.
         :param theta: The angle between the point and the front/back centre.
         :return: Two points that have a distance of 2*z from each other.
         """
-        x, y = self.polar_to_cartesian_2d(r, theta)
+        x, y = self._polar_to_cartesian_2d(r, theta)
 
         return Point(x, y, self.z), Point(x, y, -self.z)
 
@@ -79,18 +80,18 @@ class OFFFileCreator:
         """
 
         # Create the upper and lower points for the opening/closing slit edge.
-        upper_front_point, upper_back_point = self.create_mirrored_points(
+        upper_front_point, upper_back_point = self._create_mirrored_points(
             radius, slit_edge
         )
-        lower_front_point, lower_back_point = self.create_mirrored_points(
+        lower_front_point, lower_back_point = self._create_mirrored_points(
             centre_to_slit_start, slit_edge
         )
 
         # Add all of the points to the list of points.
-        self.add_point_to_list(upper_front_point)
-        self.add_point_to_list(upper_back_point)
-        self.add_point_to_list(lower_front_point)
-        self.add_point_to_list(lower_back_point)
+        self._add_point_to_list(upper_front_point)
+        self._add_point_to_list(upper_back_point)
+        self._add_point_to_list(lower_front_point)
+        self._add_point_to_list(lower_back_point)
 
         # Create a face for the slit edge that contains all four points.
         self.add_face_to_list(
@@ -112,9 +113,9 @@ class OFFFileCreator:
         :return: The two point objects.
         """
 
-        front, back = self.create_mirrored_points(r, theta)
-        self.add_point_to_list(front)
-        self.add_point_to_list(back)
+        front, back = self._create_mirrored_points(r, theta)
+        self._add_point_to_list(front)
+        self._add_point_to_list(back)
 
         return front, back
 
@@ -132,7 +133,7 @@ class OFFFileCreator:
         """
         self.add_face_to_list([self.back_centre] + points)
 
-    def add_point_to_list(self, point):
+    def _add_point_to_list(self, point):
         """
         Records a point and gives it an ID.
         :param point: The point that is added to the list of points.
@@ -148,65 +149,96 @@ class OFFFileCreator:
         ids = [point.id for point in points]
         self.faces.append(ids)
 
-    def add_number_string_to_file_string(self, numbers):
+    def _add_number_string_to_file_string(self, numbers):
         """
         Adds a list of numbers separated by a space to the OFF file string.
         :param numbers: The list of numbers that will go in the OFF file.
         """
         self.file_contents += " ".join([str(num) for num in numbers]) + "\n"
 
-    def add_point_to_file_string(self, point):
+    def _add_point_to_file_string(self, point):
         """
         Adds a point to the OFF file string by obtaining its point string.
         :param point: The point that is added to the file string.
         """
         self.file_contents += point.point_string()
 
-    def add_face_to_file_string(self, face):
+    def _add_face_to_file_string(self, face):
         """
         Adds a face to the OFF file string using a list of the point IDs.
         :param face: A list of the IDs of the points that make the face.
         """
         n_points = len(face)
-        self.add_number_string_to_file_string([n_points] + face)
+        self._add_number_string_to_file_string([n_points] + face)
 
     def add_top_dead_centre_arrow(self, r):
         """
-        Adds a 2D arrow to the mesh in order to illustrate the location of the top dead centre. Chooses a length that is
-        1/20th of the disk radius to create the arrow.
+        Adds a 2D arrow to the mesh in order to illustrate the location of the top dead centre.
         :param r: The distance between the disk centre and the top dead centre arrow.
         """
-        arrow_size = self.radius * 0.05
         # Create the three points that will make the arrow/triangle and add them to the list of points
         arrow_points = [
-            Point(*self.polar_to_cartesian_2d(r, 0), self.z),
-            Point(*self.polar_to_cartesian_2d(r + arrow_size, 0), self.z + arrow_size),
-            Point(*self.polar_to_cartesian_2d(r - arrow_size, 0), self.z + arrow_size),
+            Point(*self._polar_to_cartesian_2d(r, 0), self.z),
+            Point(
+                *self._polar_to_cartesian_2d(r + self.arrow_size, 0),
+                self.z + self.arrow_size
+            ),
+            Point(
+                *self._polar_to_cartesian_2d(r - self.arrow_size, 0),
+                self.z + self.arrow_size
+            ),
         ]
-        self.add_point_to_list(arrow_points[0])
-        self.add_point_to_list(arrow_points[1])
-        self.add_point_to_list(arrow_points[2])
+        self._add_point_to_list(arrow_points[0])
+        self._add_point_to_list(arrow_points[1])
+        self._add_point_to_list(arrow_points[2])
 
         # Add the face to the list of faces
         self.add_face_to_list(arrow_points)
+
+    def _add_comments_to_file_string(self):
+        """
+        Adds comments to the OFF file string about the resolution, thickness, and arrow properties.
+        """
+
+        resolution_comment = "# The resolution is set to {}.".format(self.resolution)
+        thickness_comment = "# The thickness of the disk is set to 2 * {}.".format(
+            self.z
+        )
+        arrow_comment = "# The TDC arrow has a height of {} and a base of 2 * {}.".format(
+            self.arrow_size, self.arrow_size
+        )
+        how_to_change_comment = "# The above values can be changed by going to the recipe's __init__ method and then running it again."
+
+        combined_comment = "\n".join(
+            [
+                resolution_comment,
+                thickness_comment,
+                arrow_comment,
+                how_to_change_comment,
+            ]
+        )
+
+        self.file_contents += combined_comment + "\n"
 
     def _generate_file_contents(self):
         """
         Create the string that stores all the information needed in the OFF file.
         """
+        self._add_comments_to_file_string()
+
         n_points = len(self.points)
         n_faces = len(self.faces)
 
         # Add point count and face count to the file. Use zero for the number of edges as this is optional.
-        self.add_number_string_to_file_string([n_points, n_faces, 0])
+        self._add_number_string_to_file_string([n_points, n_faces, 0])
 
         # Add the point information to the string
         for point in self.points:
-            self.add_point_to_file_string(point)
+            self._add_point_to_file_string(point)
 
         # Add the face information to the string
         for face in self.faces:
-            self.add_face_to_file_string(face)
+            self._add_face_to_file_string(face)
 
     def get_file_contents(self):
         """
@@ -237,10 +269,8 @@ class OFFFileWrapper(object):
         Prints a string containing the chopper name, its number of slits, and a figure indicating how much of the
         chopper is covered in slits.
         """
-        print(
-            "Chopper ({}) has {} openings covering {}% of the disk.".format(
-                self.name, self.num_slits, self.percent_covered
-            )
+        return "Chopper ({}) has {} openings covering {}% of the disk.".format(
+            self.name, self.num_slits, self.percent_covered
         )
 
     def write_off_file(self, filename):
@@ -405,7 +435,7 @@ class recipe:
         else:
             slit_edges = [x % recipe.TWO_PI for x in slit_edges]
 
-        off_creator = OFFFileCreator(self.thickness * 0.5, radius)
+        off_creator = OFFFileCreator(self.thickness * 0.5, radius, self.resolution)
 
         # Create four points for the first slit in the chopper data
         point_set = off_creator.create_and_add_point_set(
@@ -553,6 +583,5 @@ class recipe:
                 self.validate_chopper(chopper)
                 self.off_wrappers.append(self.generate_off_wrapper(chopper))
                 print(self.off_wrappers[-1])
-                self.off_wrappers[-1].write_off_file("test.off")
 
             return self.off_wrappers
