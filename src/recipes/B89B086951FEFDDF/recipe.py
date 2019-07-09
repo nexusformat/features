@@ -232,7 +232,7 @@ class OFFFileWrapper(object):
         self.percent_covered = int(round(percent_covered))
         self.num_slits = num_slits
 
-    def str(self):
+    def __str__(self):
         """
         Prints a string containing the chopper name, its number of slits, and a figure indicating how much of the
         chopper is covered in slits.
@@ -359,7 +359,6 @@ class recipe:
                 self.resolution_angles[(self.resolution_angles > first_angle)],
                 self.resolution_angles[(self.resolution_angles < second_angle)],
             )
-            print(intermediate_angles)
             # Add the top dead centre arrow to the file
             off_creator.add_top_dead_centre_arrow(r)
 
@@ -556,6 +555,7 @@ class recipe:
 
                 self.validate_chopper(chopper)
                 self.off_wrappers.append(self.generate_off_wrapper(chopper))
-                self.off_wrappers[-1].str()
+                print(self.off_wrappers[-1])
+                self.off_wrappers[-1].write_off_file("test.off")
 
             return self.off_wrappers
