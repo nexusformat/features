@@ -31,12 +31,13 @@ class OFFFileCreator:
     Tool for creating OFF files in the form of strings from NXdisk_chopper information.
     """
 
-    def __init__(self, z):
+    def __init__(self, z, radius):
 
         self.file_contents = "OFF\n"
         self.points = []
         self.faces = []
         self.z = z
+        self.radius = radius
 
         # Create points for the front and back centres of the disk
         self.front_centre = Point(0, 0, self.z)
@@ -168,6 +169,26 @@ class OFFFileCreator:
         """
         n_points = len(face)
         self.add_number_string_to_file_string([n_points] + face)
+
+    def add_top_dead_centre_arrow(self, r):
+        """
+        Adds a 2D arrow to the mesh in order to illustrate the location of the top dead centre. Chooses a length that is
+        1/20th of the disk radius to create the arrow.
+        :param r: The distance between the disk centre and the top dead centre arrow.
+        """
+        arrow_size = self.radius * 0.05
+        # Create the three points that will make the arrow/triangle and add them to the list of points
+        arrow_points = [
+            Point(*self.polar_to_cartesian_2d(r, 0), self.z),
+            Point(*self.polar_to_cartesian_2d(r + arrow_size, 0), self.z + arrow_size),
+            Point(*self.polar_to_cartesian_2d(r - arrow_size, 0), self.z + arrow_size),
+        ]
+        self.add_point_to_list(arrow_points[0])
+        self.add_point_to_list(arrow_points[1])
+        self.add_point_to_list(arrow_points[2])
+
+        # Add the face to the list of faces
+        self.add_face_to_list(arrow_points)
 
     def _generate_file_contents(self):
         """
@@ -338,6 +359,9 @@ class recipe:
                 self.resolution_angles[(self.resolution_angles > first_angle)],
                 self.resolution_angles[(self.resolution_angles < second_angle)],
             )
+            print(intermediate_angles)
+            # Add the top dead centre arrow to the file
+            off_creator.add_top_dead_centre_arrow(r)
 
         prev_front = first_front
         prev_back = first_back
@@ -385,7 +409,7 @@ class recipe:
         else:
             slit_edges = [x % recipe.TWO_PI for x in slit_edges]
 
-        off_creator = OFFFileCreator(self.thickness * 0.5)
+        off_creator = OFFFileCreator(self.thickness * 0.5, radius)
 
         # Create four points for the first slit in the chopper data
         point_set = off_creator.create_and_add_point_set(
