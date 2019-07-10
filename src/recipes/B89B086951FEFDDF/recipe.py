@@ -31,13 +31,13 @@ class OFFFileCreator:
     Tool for creating OFF files in the form of strings from NXdisk_chopper information.
     """
 
-    def __init__(self, z, radius, resolution):
+    def __init__(self, z, resolution, arrow_size):
 
         self.file_contents = "OFF\n"
         self.points = []
         self.faces = []
         self.z = z
-        self.arrow_size = radius * 0.05
+        self.arrow_size = arrow_size
         self.resolution = resolution
 
         # Create points for the front and back centres of the disk
@@ -177,14 +177,17 @@ class OFFFileCreator:
         :param r: The distance between the disk centre and the top dead centre arrow.
         """
         # Create the three points that will make the arrow/triangle and add them to the list of points
+
+        zero = 0
+
         arrow_points = [
-            Point(*self._polar_to_cartesian_2d(r, 0), self.z),
+            Point(*self._polar_to_cartesian_2d(r, zero), self.z),
             Point(
-                *self._polar_to_cartesian_2d(r + self.arrow_size, 0),
+                *self._polar_to_cartesian_2d(r + self.arrow_size, zero),
                 self.z + self.arrow_size
             ),
             Point(
-                *self._polar_to_cartesian_2d(r - self.arrow_size, 0),
+                *self._polar_to_cartesian_2d(r - self.arrow_size, zero),
                 self.z + self.arrow_size
             ),
         ]
@@ -200,14 +203,19 @@ class OFFFileCreator:
         Adds comments to the OFF file string about the resolution, thickness, and arrow properties.
         """
 
-        resolution_comment = "# The resolution is set to {}.".format(self.resolution)
+        resolution_comment = (
+            "# The resolution is set to {}. This is the number of angles in the range of 0 to 360"
+            " (not including slit edges) where the chopper is 'split'."
+        ).format(self.resolution)
         thickness_comment = "# The thickness of the disk is set to 2 * {}.".format(
             self.z
         )
         arrow_comment = "# The TDC arrow has a height of {} and a base of 2 * {}.".format(
             self.arrow_size, self.arrow_size
         )
-        how_to_change_comment = "# The above values can be changed by going to the recipe's __init__ method and then running it again."
+        how_to_change_comment = (
+            "# The above values can be changed by going to the recipe's __init__ method and then running it again."
+        )
 
         combined_comment = "\n".join(
             [
@@ -336,9 +344,13 @@ class recipe:
         self.required_fields = ["slits", "slit_height", "slit_edges", "radius"]
         self.required_attributes = [("slit_edges", "units")]
 
+        # Used to determine the size of the TDC arrow
+        self.arrow_size = 20
+
     def get_chopper_data(self, chopper):
         """
-        Extract radius, slit_height, slit_edges, and angle units data from a given chopper group.
+        Extract radius, slit_height, slit_edges, and angle units data from a given chopper group. If a name isn't found
+        then one is created.
         """
         try:
             name = chopper["name"][()]
@@ -435,7 +447,9 @@ class recipe:
         else:
             slit_edges = [x % recipe.TWO_PI for x in slit_edges]
 
-        off_creator = OFFFileCreator(self.thickness * 0.5, radius, self.resolution)
+        off_creator = OFFFileCreator(
+            self.thickness * 0.5, self.resolution, self.arrow_size
+        )
 
         # Create four points for the first slit in the chopper data
         point_set = off_creator.create_and_add_point_set(
