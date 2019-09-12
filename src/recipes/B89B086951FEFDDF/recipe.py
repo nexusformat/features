@@ -69,7 +69,7 @@ class OFFFileCreator:
 
         return Point(x, y, self.z), Point(x, y, -self.z)
 
-    def create_and_add_point_set(self, radius, centre_to_slit_start, slit_edge):
+    def create_and_add_point_set(self, radius, centre_to_slit_start, slit_edge, right_face = True):
         """
         Creates and records the upper and lower points for a slit edge and adds these to the file string. Also adds the
         face made from all four points to the file string.
@@ -94,9 +94,14 @@ class OFFFileCreator:
         self._add_point_to_list(lower_back_point)
 
         # Create a face for the slit edge that contains all four points.
-        self.add_face_to_list(
-            [lower_front_point, upper_front_point, upper_back_point, lower_back_point]
-        )
+        if not right_face:
+            self.add_face_to_list(
+                [lower_front_point, upper_front_point, upper_back_point, lower_back_point]
+            )
+        else:
+            self.add_face_to_list(
+                [lower_back_point, upper_back_point, upper_front_point, lower_front_point]
+            )
 
         return [
             upper_front_point,
@@ -468,7 +473,7 @@ class recipe:
 
             # Create four points for the current slit edge
             current_upper_front, current_upper_back, current_lower_front, current_lower_back = off_creator.create_and_add_point_set(
-                radius, centre_to_slit_bottom, slit_edges[i]
+                radius, centre_to_slit_bottom, slit_edges[i], i % 2
             )
 
             # Create lower intermediate points/faces if the slit angle index is odd
