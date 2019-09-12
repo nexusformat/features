@@ -69,7 +69,7 @@ class OFFFileCreator:
 
         return Point(x, y, self.z), Point(x, y, -self.z)
 
-    def create_and_add_point_set(self, radius, centre_to_slit_start, slit_edge, right_face = True):
+    def create_and_add_point_set(self, radius, centre_to_slit_start, slit_edge, right_face = False):
         """
         Creates and records the upper and lower points for a slit edge and adds these to the file string. Also adds the
         face made from all four points to the file string.
