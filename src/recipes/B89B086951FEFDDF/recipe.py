@@ -335,7 +335,7 @@ class recipe:
 
         # Number of "slices" in the chopper excluding slit boundaries. Must be zero or greater. A higher value makes the
         # mesh more detailed.
-        self.resolution = 50
+        self.resolution = 20
         self.resolution_angles = None
 
         # The thickness of the disk chopper. This is used only for display purposes in order to make the model 3D.
@@ -420,7 +420,7 @@ class recipe:
             off_creator.add_face_connected_to_front_centre([prev_front, current_front])
 
             # Create a three-point face with the two back points and the back centre point
-            off_creator.add_face_connected_to_back_centre([prev_back, current_back])
+            off_creator.add_face_connected_to_back_centre([current_back, prev_back])
             prev_front = current_front
             prev_back = current_back
 
@@ -429,7 +429,7 @@ class recipe:
 
         # Create the final faces connected to the front and back centre points
         off_creator.add_face_connected_to_front_centre([prev_front, second_front])
-        off_creator.add_face_connected_to_back_centre([prev_back, second_back])
+        off_creator.add_face_connected_to_back_centre([second_back, prev_back])
 
     def generate_off_wrapper(self, chopper):
         """
@@ -596,6 +596,7 @@ class recipe:
 
                 self.validate_chopper(chopper)
                 self.off_wrappers.append(self.generate_off_wrapper(chopper))
+                self.off_wrappers[-1].write_off_file("example.off")
                 print(self.off_wrappers[-1])
 
             return self.off_wrappers
