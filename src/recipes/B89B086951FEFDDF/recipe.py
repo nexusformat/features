@@ -226,7 +226,10 @@ class OFFFileCreator:
         arrow_comment = "# The TDC arrow has a height of {} and a base of 2 * {}.".format(
             self.arrow_size, self.arrow_size
         )
-        how_to_change_comment = "# The above values can be changed by going to the recipe's __init__ method and then running it again."
+
+        how_to_change_comment = (
+            "# The above values can be changed by going to the recipe's __init__ method and then running it again."
+        )
 
         combined_comment = "\n".join(
             [
@@ -285,13 +288,15 @@ class OFFFileWrapper(object):
 
     def __str__(self):
         """
-        Prints a string containing the chopper name, its number of slits, and a figure indicating how much of the
+        Returns a string containing the chopper name, its number of slits, and a figure indicating how much of the
         chopper is covered in slits.
         """
         return "Chopper ({}) has {} openings covering {}% of the disk.".format(
             self.name, self.num_slits, self.percent_covered
         )
 
+    __repr__ = __str__
+    
     def write_off_file(self, filename):
         """
         Takes a filename argument and writes the `file_contents` to a file.
@@ -346,7 +351,7 @@ class recipe:
 
         # Number of "slices" in the chopper excluding slit boundaries. Must be zero or greater. A higher value makes the
         # mesh more detailed.
-        self.resolution = 20
+        self.resolution = 50
         self.resolution_angles = None
 
         # The thickness of the disk chopper. This is used only for display purposes in order to make the model 3D.
@@ -366,7 +371,7 @@ class recipe:
         try:
             name = chopper["name"][()]
         except KeyError:
-            name = "Chopper " + str(len(self.off_wrappers))
+            name = chopper.name
         radius = chopper["radius"][()]
         slit_height = chopper["slit_height"][()]
         slit_edges = chopper["slit_edges"][()]
@@ -592,7 +597,7 @@ class recipe:
         is useful to a user and instructive to a person reading the code.
         See some of the recommended examples for inspiration what to return.
 
-        :return: A list of the the filenames of the OFF files that have been created.
+        :return: A list of OFF file wrappers with information about the choppers.
         """
 
         chopper_finder = _NXDiskChopperFinder()
