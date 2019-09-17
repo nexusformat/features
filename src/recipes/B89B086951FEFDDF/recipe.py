@@ -226,7 +226,6 @@ class OFFFileCreator:
         arrow_comment = "# The TDC arrow has a height of {} and a base of 2 * {}.".format(
             self.arrow_size, self.arrow_size
         )
-
         how_to_change_comment = (
             "# The above values can be changed by going to the recipe's __init__ method and then running it again."
         )
