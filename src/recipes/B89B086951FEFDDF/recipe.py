@@ -69,7 +69,9 @@ class OFFFileCreator:
 
         return Point(x, y, self.z), Point(x, y, -self.z)
 
-    def create_and_add_point_set(self, radius, centre_to_slit_start, slit_edge, right_face = False):
+    def create_and_add_point_set(
+        self, radius, centre_to_slit_start, slit_edge, right_face
+    ):
         """
         Creates and records the upper and lower points for a slit edge and adds these to the file string. Also adds the
         face made from all four points to the file string.
@@ -93,15 +95,20 @@ class OFFFileCreator:
         self._add_point_to_list(lower_front_point)
         self._add_point_to_list(lower_back_point)
 
-        # Create a face for the slit edge that contains all four points.
-        if not right_face:
-            self.add_face_to_list(
-                [lower_front_point, upper_front_point, upper_back_point, lower_back_point]
-            )
+        # Create a right-facing point list for the boundary of the slit edge.
+        right_face_order = [
+            lower_back_point,
+            upper_back_point,
+            upper_front_point,
+            lower_front_point,
+        ]
+
+        if right_face:
+            # Turn the points into a face if the boundary is right-facing.
+            self.add_face_to_list(right_face_order)
         else:
-            self.add_face_to_list(
-                [lower_back_point, upper_back_point, upper_front_point, lower_front_point]
-            )
+            # Reverse the list otherwise.
+            self.add_face_to_list(reversed(right_face_order))
 
         return [
             upper_front_point,
@@ -218,9 +225,7 @@ class OFFFileCreator:
         arrow_comment = "# The TDC arrow has a height of {} and a base of 2 * {}.".format(
             self.arrow_size, self.arrow_size
         )
-        how_to_change_comment = (
-            "# The above values can be changed by going to the recipe's __init__ method and then running it again."
-        )
+        how_to_change_comment = "# The above values can be changed by going to the recipe's __init__ method and then running it again."
 
         combined_comment = "\n".join(
             [
@@ -458,7 +463,7 @@ class recipe:
 
         # Create four points for the first slit in the chopper data
         point_set = off_creator.create_and_add_point_set(
-            radius, centre_to_slit_bottom, slit_edges[0]
+            radius, centre_to_slit_bottom, slit_edges[0], False
         )
 
         prev_upper_front = first_upper_front = point_set[0]
