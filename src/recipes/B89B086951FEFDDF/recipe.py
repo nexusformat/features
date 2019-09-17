@@ -78,6 +78,7 @@ class OFFFileCreator:
         :param radius: The radius of the disk chopper.
         :param centre_to_slit_start: The distance between the disk centre and the start of the slit.
         :param slit_edge: The angle of the slit in radians.
+        :param right_face: Whether or not face on the boundary of the slit edge is facing right or facing left.
         :return: A list containing point objects for the four points in the chopper mesh with an angle of `slit_edge`.
         """
 
