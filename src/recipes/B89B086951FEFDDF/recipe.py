@@ -611,7 +611,5 @@ class recipe:
 
                 self.validate_chopper(chopper)
                 self.off_wrappers.append(self.generate_off_wrapper(chopper))
-                self.off_wrappers[-1].write_off_file("example.off")
-                print(self.off_wrappers[-1])
 
             return self.off_wrappers
