@@ -350,7 +350,7 @@ class recipe:
 
         # Number of "slices" in the chopper excluding slit boundaries. Must be zero or greater. A higher value makes the
         # mesh more detailed.
-        self.resolution = 15
+        self.resolution = 50
         self.resolution_angles = None
 
         # The thickness of the disk chopper. This is used only for display purposes in order to make the model 3D.
