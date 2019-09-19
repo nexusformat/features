@@ -70,7 +70,7 @@ class OFFFileCreator:
         return Point(x, y, self.z), Point(x, y, -self.z)
 
     def create_and_add_point_set(
-        self, radius, centre_to_slit_start, slit_edge, right_face
+        self, radius, centre_to_slit_start, slit_edge, right_facing
     ):
         """
         Creates and records the upper and lower points for a slit edge and adds these to the file string. Also adds the
@@ -78,7 +78,7 @@ class OFFFileCreator:
         :param radius: The radius of the disk chopper.
         :param centre_to_slit_start: The distance between the disk centre and the start of the slit.
         :param slit_edge: The angle of the slit in radians.
-        :param right_face: Whether or not face on the boundary of the slit edge is facing right or facing left.
+        :param right_facing: Whether or not face on the boundary of the slit edge is facing right or facing left.
         :return: A list containing point objects for the four points in the chopper mesh with an angle of `slit_edge`.
         """
 
@@ -97,19 +97,19 @@ class OFFFileCreator:
         self._add_point_to_list(lower_back_point)
 
         # Create a right-facing point list for the boundary of the slit edge.
-        right_face_order = [
+        right_facing_face_order = [
             lower_back_point,
             upper_back_point,
             upper_front_point,
             lower_front_point,
         ]
 
-        if right_face:
+        if right_facing:
             # Turn the points into a face if the boundary is right-facing.
-            self.add_face_to_list(right_face_order)
+            self.add_face_to_list(right_facing_face_order)
         else:
             # Reverse the list otherwise.
-            self.add_face_to_list(reversed(right_face_order))
+            self.add_face_to_list(right_facing_face_order[::-1])
 
         return [
             upper_front_point,
@@ -350,7 +350,7 @@ class recipe:
 
         # Number of "slices" in the chopper excluding slit boundaries. Must be zero or greater. A higher value makes the
         # mesh more detailed.
-        self.resolution = 50
+        self.resolution = 15
         self.resolution_angles = None
 
         # The thickness of the disk chopper. This is used only for display purposes in order to make the model 3D.
