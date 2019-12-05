@@ -69,13 +69,16 @@ class OFFFileCreator:
 
         return Point(x, y, self.z), Point(x, y, -self.z)
 
-    def create_and_add_point_set(self, radius, centre_to_slit_start, slit_edge):
+    def create_and_add_point_set(
+        self, radius, centre_to_slit_start, slit_edge, right_facing
+    ):
         """
         Creates and records the upper and lower points for a slit edge and adds these to the file string. Also adds the
         face made from all four points to the file string.
         :param radius: The radius of the disk chopper.
         :param centre_to_slit_start: The distance between the disk centre and the start of the slit.
         :param slit_edge: The angle of the slit in radians.
+        :param right_facing: Whether or not face on the boundary of the slit edge is facing right or facing left.
         :return: A list containing point objects for the four points in the chopper mesh with an angle of `slit_edge`.
         """
 
@@ -93,10 +96,20 @@ class OFFFileCreator:
         self._add_point_to_list(lower_front_point)
         self._add_point_to_list(lower_back_point)
 
-        # Create a face for the slit edge that contains all four points.
-        self.add_face_to_list(
-            [lower_front_point, upper_front_point, upper_back_point, lower_back_point]
-        )
+        # Create a right-facing point list for the boundary of the slit edge.
+        right_facing_face_order = [
+            lower_back_point,
+            upper_back_point,
+            upper_front_point,
+            lower_front_point,
+        ]
+
+        if right_facing:
+            # Turn the points into a face if the boundary is right-facing.
+            self.add_face_to_list(right_facing_face_order)
+        else:
+            # Reverse the list otherwise.
+            self.add_face_to_list(right_facing_face_order[::-1])
 
         return [
             upper_front_point,
@@ -422,7 +435,7 @@ class recipe:
             off_creator.add_face_connected_to_front_centre([prev_front, current_front])
 
             # Create a three-point face with the two back points and the back centre point
-            off_creator.add_face_connected_to_back_centre([prev_back, current_back])
+            off_creator.add_face_connected_to_back_centre([current_back, prev_back])
             prev_front = current_front
             prev_back = current_back
 
@@ -431,7 +444,7 @@ class recipe:
 
         # Create the final faces connected to the front and back centre points
         off_creator.add_face_connected_to_front_centre([prev_front, second_front])
-        off_creator.add_face_connected_to_back_centre([prev_back, second_back])
+        off_creator.add_face_connected_to_back_centre([second_back, prev_back])
 
     def generate_off_wrapper(self, chopper):
         """
@@ -455,7 +468,7 @@ class recipe:
 
         # Create four points for the first slit in the chopper data
         point_set = off_creator.create_and_add_point_set(
-            radius, centre_to_slit_bottom, slit_edges[0]
+            radius, centre_to_slit_bottom, slit_edges[0], False
         )
 
         prev_upper_front = first_upper_front = point_set[0]
@@ -470,7 +483,7 @@ class recipe:
 
             # Create four points for the current slit edge
             current_upper_front, current_upper_back, current_lower_front, current_lower_back = off_creator.create_and_add_point_set(
-                radius, centre_to_slit_bottom, slit_edges[i]
+                radius, centre_to_slit_bottom, slit_edges[i], i % 2
             )
 
             # Create lower intermediate points/faces if the slit angle index is odd
