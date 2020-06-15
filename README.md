@@ -12,7 +12,7 @@ The main objectives of this project is it to
   
 ## Usage
 
-Provided all dependencies are met (see below):
+Provided all dependencies are met (see below) running this:
 
     $ python src/nxfeature.py filewithfeature.nxs
 
@@ -54,7 +54,7 @@ Features are referenced by a (semi-)random 64 bit uint identifier. To get an ID 
 2. checkout your clone 
 3. run `./newfeature`, which will:
     * check your clone is up to date 
-    * ask a few questions on the feature you indend to propose
+    * ask a few questions on the feature you intend to propose
     * register the proposal with our webservice which will issue a unique ID
     * generate some template code as a starting point
 5. activate the feature by clicking on the link in the confirmation mail you received from the webservice
@@ -68,7 +68,9 @@ If at any point you encounter problems, just raise a ticket in this repository.
 
 ## Status
 
-This is project is deemed useful by the NIAC, but progress to add more features is slow.
+This is project is deemed useful by the NIAC. The set of features that demonstrate the usefulness of the project is small and growing slowly.
+It is acknowledged that the documentation does not satisfy all needs at the moment.
+Pull requests or suggestions are welcome.
 
 The travis build checks the example files against all recipes in the repository.
 
