@@ -639,7 +639,7 @@ def validate(nx_geometry):
 
 class recipe:
     """
-    Geometrical Shape (NXoff_geometry, NXcylindrical_geometry) - extract OFF data (files) from NeXus
+    Extractable Geometrical Shapes (NXoff_geometry, NXcylindrical_geometry)
 
     Proposed by: matthew.d.jones@stfc.ac.uk
     """
@@ -653,7 +653,7 @@ class recipe:
         """
         self.file = filedesc
         self.entry = entrypath
-        self.title = "Geometrical Shape (NXoff_geometry, NXcylindrical_geometry) - extract OFF data (files) from NeXus"
+        self.title = "Extractable Geometrical Shapes (NXoff_geometry, NXcylindrical_geometry)"
 
     def process(self):
         """
