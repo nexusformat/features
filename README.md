@@ -14,8 +14,7 @@ The main objectives of this project is it to
 
 Provided all dependencies are met (see below):
 
-.. code-block:: bash 
-  $ python src/nxfeature.py filewithfeature.nxs
+    $ python src/nxfeature.py filewithfeature.nxs
 
 should
 * lookup the feature(s) in the file `filewithfeature.nxs`
@@ -40,10 +39,10 @@ The rationale is that features should be self contained and be viewed on their o
 Feature are not the place to put complex analysis or processing tasks.
 
 For reference, in order to install the requirements something the following is recommended:
-.. code-block:: bash 
-  $ python3 -m venv python3-environment
-  $ . python3-environment/bin/activate
-  $ pip install -r requirements.txt 
+
+    $ python3 -m venv python3-environment
+    $ . python3-environment/bin/activate
+    $ pip install -r requirements.txt 
 
 ## Submitting your own features
 
@@ -53,7 +52,7 @@ Features are referenced by a (semi-)random 64 bit uint identifier. To get an ID 
 
 1. clone this repository into your own Github account or organisation.
 2. checkout your clone 
-3. run ./newfeature which will:
+3. run `./newfeature`, which will:
     * check your clone is up to date 
     * ask a few questions on the feature you indend to propose
     * register the proposal with our webservice which will issue a unique ID
@@ -76,4 +75,3 @@ The travis build checks the example files against all recipes in the repository.
 [![Build Status](https://travis-ci.org/nexusformat/features.svg?branch=master)](https://travis-ci.org/nexusformat/features)
 [![Code Health](https://landscape.io/github/nexusformat/features/master/landscape.svg?style=flat)](https://landscape.io/github/nexusformat/features/master)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/nexusformat/features/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/nexusformat/features/?branch=master)
-
