@@ -118,6 +118,11 @@ class SingleFeatureDiscoverer:
 
 
 if __name__ == '__main__':
+
+    if sys.version_info < (3,0,0):
+        print(__file__ + ' requires Python 3. Refusing to run under version ' + str(sys.version[0]) + '.')
+        sys.exit(1)
+
     import argparse
     import traceback
 
