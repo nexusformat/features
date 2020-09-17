@@ -168,8 +168,6 @@ if __name__ == '__main__':
                 except Exception as e:
                     fail_list.append((feat, type(e).__name__, str(e), str(traceback.format_exc())))
 
-            output = str()
-
             if len(pass_list) > 0:
                 print("\tThe following features are contained in this entry:")
                 for feat, message in pass_list:
